@@ -21,6 +21,12 @@ export interface User {
   isBanned: boolean;
 }
 
+export interface SubcategoryPreference {
+  category: string;
+  acceptedSubcategories: string[];
+  rejectedSubcategories: string[];
+}
+
 export interface Organization {
   id: string;
   userId: string;
@@ -28,6 +34,7 @@ export interface Organization {
   description: string;
   acceptedCategories: string[];
   rejectedCategories: string[];
+  subcategoryPreferences: SubcategoryPreference[];
   proposedCategories: string[];
   status: 'pending' | 'approved' | 'rejected';
   verificationDocument?: string;
@@ -241,6 +248,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         description: '',
         acceptedCategories: [],
         rejectedCategories: [],
+        subcategoryPreferences: [],
         proposedCategories: [],
         status: 'pending',
         verificationDocument,
