@@ -1,10 +1,24 @@
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { Heart, Menu, X } from "lucide-react";
+import { Heart, Menu, X, LogOut, User, Building2, Shield } from "lucide-react";
 import { useState } from "react";
+import { useAuth } from "@/contexts/AuthContext";
 
 const Navbar = () => {
   const [isOpen, setIsOpen] = useState(false);
+  const { user, logout } = useAuth();
+  const navigate = useNavigate();
+
+  const handleLogout = () => {
+    logout();
+    navigate('/');
+  };
+
+  const getDashboardLink = () => {
+    if (user?.role === 'admin') return '/admin';
+    if (user?.role === 'organization') return '/organization';
+    return '/';
+  };
 
   return (
     <nav className="fixed top-0 left-0 right-0 z-50 bg-background/80 backdrop-blur-lg border-b border-border">
@@ -31,8 +45,28 @@ const Navbar = () => {
           </div>
 
           <div className="hidden md:flex items-center gap-3">
-            <Button variant="ghost">Sign In</Button>
-            <Button variant="hero">Donate Now</Button>
+            {user ? (
+              <>
+                <Link to={getDashboardLink()}>
+                  <Button variant="ghost" className="gap-2">
+                    {user.role === 'admin' && <Shield className="h-4 w-4" />}
+                    {user.role === 'organization' && <Building2 className="h-4 w-4" />}
+                    {user.role === 'user' && <User className="h-4 w-4" />}
+                    {user.name}
+                  </Button>
+                </Link>
+                <Button variant="ghost" onClick={handleLogout}>
+                  <LogOut className="h-4 w-4" />
+                </Button>
+              </>
+            ) : (
+              <>
+                <Link to="/auth">
+                  <Button variant="ghost">Sign In</Button>
+                </Link>
+                <Button variant="hero">Donate Now</Button>
+              </>
+            )}
           </div>
 
           {/* Mobile Menu Button */}
@@ -59,8 +93,29 @@ const Navbar = () => {
                 How It Works
               </Link>
               <div className="flex flex-col gap-2 pt-4 border-t border-border">
-                <Button variant="ghost" className="w-full">Sign In</Button>
-                <Button variant="hero" className="w-full">Donate Now</Button>
+                {user ? (
+                  <>
+                    <Link to={getDashboardLink()}>
+                      <Button variant="ghost" className="w-full gap-2">
+                        {user.role === 'admin' && <Shield className="h-4 w-4" />}
+                        {user.role === 'organization' && <Building2 className="h-4 w-4" />}
+                        {user.role === 'user' && <User className="h-4 w-4" />}
+                        Dashboard
+                      </Button>
+                    </Link>
+                    <Button variant="ghost" className="w-full" onClick={handleLogout}>
+                      <LogOut className="h-4 w-4 mr-2" />
+                      Logout
+                    </Button>
+                  </>
+                ) : (
+                  <>
+                    <Link to="/auth">
+                      <Button variant="ghost" className="w-full">Sign In</Button>
+                    </Link>
+                    <Button variant="hero" className="w-full">Donate Now</Button>
+                  </>
+                )}
               </div>
             </div>
           </div>
