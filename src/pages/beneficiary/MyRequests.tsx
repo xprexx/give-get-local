@@ -8,9 +8,10 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 import { useAuth, ItemRequest } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
-import { Heart, Plus, ArrowLeft, MapPin, Calendar, Trash2, Edit } from "lucide-react";
+import { Heart, Plus, ArrowLeft, MapPin, Calendar, Trash2, Edit, AlertTriangle, Clock, CheckCircle, XCircle, Info } from "lucide-react";
 import { format } from "date-fns";
 
 const MyRequests = () => {
@@ -18,11 +19,13 @@ const MyRequests = () => {
   const { toast } = useToast();
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingRequest, setEditingRequest] = useState<ItemRequest | null>(null);
+  const [useCustomCategory, setUseCustomCategory] = useState(false);
 
   const [formData, setFormData] = useState({
     title: "",
     description: "",
     category: "",
+    customCategory: "",
     location: "",
     urgency: "medium" as "low" | "medium" | "high",
   });
@@ -32,7 +35,9 @@ const MyRequests = () => {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!formData.title || !formData.description || !formData.category || !formData.location) {
+    const categoryValue = useCustomCategory ? formData.customCategory : formData.category;
+
+    if (!formData.title || !formData.description || !categoryValue || !formData.location) {
       toast({
         title: "Missing Information",
         description: "Please fill in all required fields.",
@@ -41,31 +46,46 @@ const MyRequests = () => {
       return;
     }
 
+    const requestData = {
+      title: formData.title,
+      description: formData.description,
+      category: categoryValue,
+      isCustomCategory: useCustomCategory,
+      location: formData.location,
+      urgency: formData.urgency,
+    };
+
     if (editingRequest) {
-      updateItemRequest(editingRequest.id, formData);
+      updateItemRequest(editingRequest.id, requestData);
       toast({
         title: "Request Updated",
         description: "Your item request has been updated successfully.",
       });
     } else {
-      submitItemRequest(formData);
+      submitItemRequest(requestData);
+      const message = useCustomCategory
+        ? "Your request has been submitted and is pending admin approval since it uses a custom category."
+        : "Your item request has been posted. Donors will be able to see it.";
       toast({
         title: "Request Submitted",
-        description: "Your item request has been posted. Donors will be able to see it.",
+        description: message,
       });
     }
 
-    setFormData({ title: "", description: "", category: "", location: "", urgency: "medium" });
+    setFormData({ title: "", description: "", category: "", customCategory: "", location: "", urgency: "medium" });
+    setUseCustomCategory(false);
     setEditingRequest(null);
     setIsDialogOpen(false);
   };
 
   const handleEdit = (request: ItemRequest) => {
     setEditingRequest(request);
+    setUseCustomCategory(request.isCustomCategory);
     setFormData({
       title: request.title,
       description: request.description,
-      category: request.category,
+      category: request.isCustomCategory ? "" : request.category,
+      customCategory: request.isCustomCategory ? request.category : "",
       location: request.location,
       urgency: request.urgency,
     });
@@ -80,12 +100,12 @@ const MyRequests = () => {
     });
   };
 
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'active': return 'success';
-      case 'fulfilled': return 'default';
-      case 'cancelled': return 'secondary';
-      default: return 'outline';
+  const getModerationBadge = (request: ItemRequest) => {
+    switch (request.moderationStatus) {
+      case 'pending': return <Badge variant="secondary" className="gap-1"><Clock className="w-3 h-3" />Pending Review</Badge>;
+      case 'approved': return <Badge variant="success" className="gap-1"><CheckCircle className="w-3 h-3" />Approved</Badge>;
+      case 'rejected': return <Badge variant="destructive" className="gap-1"><XCircle className="w-3 h-3" />Rejected</Badge>;
+      default: return null;
     }
   };
 
@@ -124,7 +144,7 @@ const MyRequests = () => {
       </header>
 
       <main className="container mx-auto px-4 py-8">
-        <div className="flex items-center justify-between mb-8">
+        <div className="flex items-center justify-between mb-6">
           <div>
             <h1 className="text-2xl font-bold mb-1">My Item Requests</h1>
             <p className="text-muted-foreground">
@@ -135,7 +155,8 @@ const MyRequests = () => {
             setIsDialogOpen(open);
             if (!open) {
               setEditingRequest(null);
-              setFormData({ title: "", description: "", category: "", location: "", urgency: "medium" });
+              setUseCustomCategory(false);
+              setFormData({ title: "", description: "", category: "", customCategory: "", location: "", urgency: "medium" });
             }
           }}>
             <DialogTrigger asChild>
@@ -173,19 +194,39 @@ const MyRequests = () => {
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
                     <Label htmlFor="category">Category *</Label>
-                    <Select
-                      value={formData.category}
-                      onValueChange={(value) => setFormData({ ...formData, category: value })}
+                    {useCustomCategory ? (
+                      <Input
+                        id="customCategory"
+                        placeholder="Enter custom category"
+                        value={formData.customCategory}
+                        onChange={(e) => setFormData({ ...formData, customCategory: e.target.value })}
+                      />
+                    ) : (
+                      <Select
+                        value={formData.category}
+                        onValueChange={(value) => setFormData({ ...formData, category: value })}
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select category" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {categories.map(cat => (
+                            <SelectItem key={cat.name} value={cat.name}>{cat.name}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    )}
+                    <Button
+                      type="button"
+                      variant="link"
+                      className="h-auto p-0 text-xs"
+                      onClick={() => {
+                        setUseCustomCategory(!useCustomCategory);
+                        setFormData({ ...formData, category: "", customCategory: "" });
+                      }}
                     >
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select category" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {categories.map(cat => (
-                          <SelectItem key={cat.name} value={cat.name}>{cat.name}</SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+                      {useCustomCategory ? "Use existing category" : "Item not in list? Add custom category"}
+                    </Button>
                   </div>
 
                   <div className="space-y-2">
@@ -206,6 +247,15 @@ const MyRequests = () => {
                   </div>
                 </div>
 
+                {useCustomCategory && (
+                  <Alert>
+                    <AlertTriangle className="h-4 w-4" />
+                    <AlertDescription>
+                      Custom category requests require admin approval before they become visible to donors.
+                    </AlertDescription>
+                  </Alert>
+                )}
+
                 <div className="space-y-2">
                   <Label htmlFor="location">Preferred Pickup Location *</Label>
                   <Input
@@ -223,6 +273,14 @@ const MyRequests = () => {
             </DialogContent>
           </Dialog>
         </div>
+
+        <Alert className="mb-6">
+          <Info className="h-4 w-4" />
+          <AlertDescription>
+            <strong>Moderation Policy:</strong> Requests using approved categories are visible immediately. 
+            Custom categories require admin approval. Admins may remove inappropriate requests at any time.
+          </AlertDescription>
+        </Alert>
 
         {myRequests.length === 0 ? (
           <Card className="text-center py-16">
@@ -251,19 +309,29 @@ const MyRequests = () => {
                     </div>
                   </div>
                   <div className="flex gap-2 flex-wrap">
-                    <Badge variant={getStatusColor(request.status)}>
-                      {request.status.charAt(0).toUpperCase() + request.status.slice(1)}
-                    </Badge>
+                    {getModerationBadge(request)}
                     <Badge variant={getUrgencyColor(request.urgency)}>
                       {request.urgency === 'high' ? 'Urgent' : request.urgency === 'medium' ? 'Moderate' : 'Low'}
                     </Badge>
                     <Badge variant="outline">{request.category}</Badge>
+                    {request.isCustomCategory && (
+                      <Badge variant="secondary">Custom</Badge>
+                    )}
                   </div>
                 </CardHeader>
                 <CardContent className="space-y-4">
                   <p className="text-muted-foreground text-sm line-clamp-3">
                     {request.description}
                   </p>
+
+                  {request.moderationStatus === 'rejected' && request.moderationNote && (
+                    <Alert variant="destructive">
+                      <XCircle className="h-4 w-4" />
+                      <AlertDescription>
+                        <strong>Rejection reason:</strong> {request.moderationNote}
+                      </AlertDescription>
+                    </Alert>
+                  )}
                   
                   <div className="flex items-center gap-4 text-sm text-muted-foreground">
                     <div className="flex items-center gap-1">

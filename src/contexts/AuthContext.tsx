@@ -52,9 +52,12 @@ export interface ItemRequest {
   title: string;
   description: string;
   category: string;
+  isCustomCategory: boolean;
   location: string;
   urgency: 'low' | 'medium' | 'high';
   status: 'active' | 'fulfilled' | 'cancelled';
+  moderationStatus: 'pending' | 'approved' | 'rejected';
+  moderationNote?: string;
   createdAt: string;
 }
 
@@ -84,9 +87,11 @@ interface AuthContextType {
   addSubcategory: (categoryName: string, subcategory: string) => void;
   updateSubcategory: (categoryName: string, oldSubcategory: string, newSubcategory: string) => void;
   deleteSubcategory: (categoryName: string, subcategory: string) => void;
-  submitItemRequest: (request: Omit<ItemRequest, 'id' | 'userId' | 'status' | 'createdAt'>) => void;
+  submitItemRequest: (request: Omit<ItemRequest, 'id' | 'userId' | 'status' | 'moderationStatus' | 'createdAt'>) => void;
   updateItemRequest: (requestId: string, updates: Partial<ItemRequest>) => void;
   deleteItemRequest: (requestId: string) => void;
+  approveItemRequest: (requestId: string) => void;
+  rejectItemRequest: (requestId: string, note: string) => void;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -440,13 +445,20 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     saveToStorage('givelocal_categories', updatedCategories);
   };
 
-  const submitItemRequest = (request: Omit<ItemRequest, 'id' | 'userId' | 'status' | 'createdAt'>) => {
+  const submitItemRequest = (request: Omit<ItemRequest, 'id' | 'userId' | 'status' | 'moderationStatus' | 'createdAt'>) => {
     if (!user) return;
+    
+    // Check if category is from approved list
+    const isApprovedCategory = categories.some(cat => cat.name === request.category);
+    
     const newRequest: ItemRequest = {
       ...request,
       id: `request-${Date.now()}`,
       userId: user.id,
+      isCustomCategory: !isApprovedCategory,
       status: 'active',
+      // Auto-approve if it's an approved category, otherwise require moderation
+      moderationStatus: isApprovedCategory ? 'approved' : 'pending',
       createdAt: new Date().toISOString(),
     };
     const updatedRequests = [...itemRequests, newRequest];
@@ -464,6 +476,22 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   const deleteItemRequest = (requestId: string) => {
     const updatedRequests = itemRequests.filter(req => req.id !== requestId);
+    setItemRequests(updatedRequests);
+    saveToStorage('givelocal_item_requests', updatedRequests);
+  };
+
+  const approveItemRequest = (requestId: string) => {
+    const updatedRequests = itemRequests.map(req =>
+      req.id === requestId ? { ...req, moderationStatus: 'approved' as const, moderationNote: undefined } : req
+    );
+    setItemRequests(updatedRequests);
+    saveToStorage('givelocal_item_requests', updatedRequests);
+  };
+
+  const rejectItemRequest = (requestId: string, note: string) => {
+    const updatedRequests = itemRequests.map(req =>
+      req.id === requestId ? { ...req, moderationStatus: 'rejected' as const, moderationNote: note } : req
+    );
     setItemRequests(updatedRequests);
     saveToStorage('givelocal_item_requests', updatedRequests);
   };
@@ -498,6 +526,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       submitItemRequest,
       updateItemRequest,
       deleteItemRequest,
+      approveItemRequest,
+      rejectItemRequest,
     }}>
       {children}
     </AuthContext.Provider>

@@ -15,7 +15,10 @@ const ItemRequests = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCategory, setSelectedCategory] = useState<string>("all");
 
-  const activeRequests = itemRequests.filter(req => req.status === 'active');
+  // Only show approved and active requests publicly
+  const activeRequests = itemRequests.filter(req => 
+    req.status === 'active' && req.moderationStatus === 'approved'
+  );
 
   const filteredRequests = activeRequests.filter(req => {
     const matchesSearch = req.title.toLowerCase().includes(searchQuery.toLowerCase()) ||

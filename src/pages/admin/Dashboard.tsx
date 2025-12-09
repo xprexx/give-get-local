@@ -2,10 +2,10 @@ import { useAuth } from '@/contexts/AuthContext';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Link } from 'react-router-dom';
-import { Users, Building2, Tags, TrendingUp, AlertCircle, CheckCircle, LogOut, ShieldCheck, HandHeart } from 'lucide-react';
+import { Users, Building2, Tags, TrendingUp, CheckCircle, LogOut, ShieldCheck, HandHeart, ClipboardList } from 'lucide-react';
 
 const AdminDashboard = () => {
-  const { users, organizations, categoryProposals, logout } = useAuth();
+  const { users, organizations, categoryProposals, itemRequests, logout } = useAuth();
 
   const pendingBeneficiaries = users.filter(u => u.role === 'beneficiary' && u.status === 'pending').length;
   const pendingOrgs = organizations.filter(o => o.status === 'pending').length;
@@ -19,6 +19,7 @@ const AdminDashboard = () => {
     pendingBeneficiaries,
     totalPendingVerifications,
     pendingProposals: categoryProposals.filter(p => p.status === 'pending').length,
+    pendingItemRequests: itemRequests.filter(r => r.moderationStatus === 'pending').length,
     bannedUsers: users.filter(u => u.isBanned).length,
     activeUsers: users.filter(u => !u.isBanned && u.role !== 'admin').length,
   };
@@ -187,6 +188,28 @@ const AdminDashboard = () => {
               </CardContent>
             </Card>
           </Link>
+
+          <Link to="/admin/item-requests">
+            <Card className="hover:shadow-lg transition-shadow cursor-pointer h-full border-orange-200 bg-orange-50/50">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <ClipboardList className="h-5 w-5 text-orange-600" />
+                  Item Requests
+                  {stats.pendingItemRequests > 0 && (
+                    <span className="bg-orange-500 text-white text-xs px-2 py-0.5 rounded-full">
+                      {stats.pendingItemRequests}
+                    </span>
+                  )}
+                </CardTitle>
+                <CardDescription>
+                  Moderate beneficiary item requests
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <Button className="w-full bg-orange-600 hover:bg-orange-700">Moderate Requests</Button>
+              </CardContent>
+            </Card>
+          </Link>
         </div>
 
         {/* Recent Activity */}
@@ -227,7 +250,21 @@ const AdminDashboard = () => {
                   </Link>
                 </div>
               )}
-              {stats.totalPendingVerifications === 0 && stats.pendingProposals === 0 && (
+              {stats.pendingItemRequests > 0 && (
+                <div className="flex items-center gap-3 p-3 bg-orange-50 rounded-lg border border-orange-200">
+                  <ClipboardList className="h-5 w-5 text-orange-600" />
+                  <div className="flex-1">
+                    <p className="font-medium text-orange-800">
+                      {stats.pendingItemRequests} item request(s) pending moderation
+                    </p>
+                    <p className="text-sm text-orange-600">Custom category requests need review</p>
+                  </div>
+                  <Link to="/admin/item-requests">
+                    <Button size="sm" variant="outline">Review</Button>
+                  </Link>
+                </div>
+              )}
+              {stats.totalPendingVerifications === 0 && stats.pendingProposals === 0 && stats.pendingItemRequests === 0 && (
                 <div className="flex items-center gap-3 p-3 bg-green-50 rounded-lg border border-green-200">
                   <CheckCircle className="h-5 w-5 text-green-600" />
                   <div className="flex-1">
