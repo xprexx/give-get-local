@@ -40,15 +40,15 @@ const Account = () => {
     setIsSavingProfile(true);
     
     // Update user in localStorage
-    const storedUsers = JSON.parse(localStorage.getItem('users') || '[]');
+    const storedUsers = JSON.parse(localStorage.getItem('givelocal_users') || '[]');
     const updatedUsers = storedUsers.map((u: any) => 
       u.id === user.id ? { ...u, name: name.trim() } : u
     );
-    localStorage.setItem('users', JSON.stringify(updatedUsers));
+    localStorage.setItem('givelocal_users', JSON.stringify(updatedUsers));
     
     // Update current user in localStorage
     const updatedUser = { ...user, name: name.trim() };
-    localStorage.setItem('user', JSON.stringify(updatedUser));
+    localStorage.setItem('givelocal_user', JSON.stringify(updatedUser));
     
     // Force a page reload to update the auth context
     setTimeout(() => {
@@ -102,11 +102,10 @@ const Account = () => {
 
     setIsSavingPassword(true);
 
-    // Verify current password
-    const storedUsers = JSON.parse(localStorage.getItem('users') || '[]');
-    const currentUser = storedUsers.find((u: any) => u.id === user.id);
+    // Verify current password using givelocal_passwords
+    const storedPasswords = JSON.parse(localStorage.getItem('givelocal_passwords') || '{}');
     
-    if (!currentUser || currentUser.password !== currentPassword) {
+    if (storedPasswords[user.email] !== currentPassword) {
       setIsSavingPassword(false);
       toast({
         title: "Error",
@@ -116,11 +115,9 @@ const Account = () => {
       return;
     }
 
-    // Update password
-    const updatedUsers = storedUsers.map((u: any) => 
-      u.id === user.id ? { ...u, password: newPassword } : u
-    );
-    localStorage.setItem('users', JSON.stringify(updatedUsers));
+    // Update password in givelocal_passwords
+    storedPasswords[user.email] = newPassword;
+    localStorage.setItem('givelocal_passwords', JSON.stringify(storedPasswords));
 
     setTimeout(() => {
       setIsSavingPassword(false);
