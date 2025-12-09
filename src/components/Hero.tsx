@@ -1,3 +1,4 @@
+import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { ArrowRight, MapPin, Users, Package } from "lucide-react";
 import heroImage from "@/assets/hero-donation.jpg";
@@ -32,13 +33,17 @@ const Hero = () => {
           </p>
 
           <div className="flex flex-col sm:flex-row gap-4 mb-12 animate-fade-up" style={{ animationDelay: "0.3s" }}>
-            <Button variant="hero" size="lg">
-              Start Donating
-              <ArrowRight className="w-5 h-5" />
-            </Button>
-            <Button variant="outline" size="lg">
-              Browse Items
-            </Button>
+            <Link to="/donate">
+              <Button variant="hero" size="lg">
+                Start Donating
+                <ArrowRight className="w-5 h-5" />
+              </Button>
+            </Link>
+            <Link to="/browse">
+              <Button variant="outline" size="lg">
+                Browse Items
+              </Button>
+            </Link>
           </div>
 
           <div className="grid grid-cols-3 gap-6 animate-fade-up" style={{ animationDelay: "0.4s" }}>
