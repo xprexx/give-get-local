@@ -1,16 +1,35 @@
+import { useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
+import { Input } from '@/components/ui/input';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { useToast } from '@/hooks/use-toast';
 import { Link } from 'react-router-dom';
-import { ArrowLeft, Tags, CheckCircle, XCircle, Clock, FolderTree } from 'lucide-react';
+import { ArrowLeft, Tags, CheckCircle, XCircle, Clock, FolderTree, Pencil, Trash2, Plus } from 'lucide-react';
 import { format } from 'date-fns';
 
 const AdminCategories = () => {
-  const { categories, categoryProposals, reviewCategoryProposal } = useAuth();
+  const { 
+    categories, 
+    categoryProposals, 
+    reviewCategoryProposal,
+    addCategory,
+    updateCategory,
+    deleteCategory,
+    addSubcategory,
+    updateSubcategory,
+    deleteSubcategory
+  } = useAuth();
   const { toast } = useToast();
+
+  const [editCategoryDialog, setEditCategoryDialog] = useState<{ open: boolean; name: string; newName: string }>({ open: false, name: '', newName: '' });
+  const [addCategoryDialog, setAddCategoryDialog] = useState<{ open: boolean; name: string }>({ open: false, name: '' });
+  const [editSubcategoryDialog, setEditSubcategoryDialog] = useState<{ open: boolean; category: string; oldName: string; newName: string }>({ open: false, category: '', oldName: '', newName: '' });
+  const [addSubcategoryDialog, setAddSubcategoryDialog] = useState<{ open: boolean; category: string; name: string }>({ open: false, category: '', name: '' });
+  const [deleteDialog, setDeleteDialog] = useState<{ open: boolean; type: 'category' | 'subcategory'; category: string; subcategory?: string }>({ open: false, type: 'category', category: '' });
 
   const pendingProposals = categoryProposals.filter(p => p.status === 'pending');
   const reviewedProposals = categoryProposals.filter(p => p.status !== 'pending');
@@ -34,6 +53,46 @@ const AdminCategories = () => {
   const handleReject = (proposalId: string, categoryName: string) => {
     reviewCategoryProposal(proposalId, 'rejected');
     toast({ title: 'Category rejected', description: `"${categoryName}" proposal has been rejected.` });
+  };
+
+  const handleAddCategory = () => {
+    if (!addCategoryDialog.name.trim()) return;
+    addCategory(addCategoryDialog.name.trim());
+    toast({ title: 'Category added', description: `"${addCategoryDialog.name}" has been created.` });
+    setAddCategoryDialog({ open: false, name: '' });
+  };
+
+  const handleUpdateCategory = () => {
+    if (!editCategoryDialog.newName.trim()) return;
+    updateCategory(editCategoryDialog.name, editCategoryDialog.newName.trim());
+    toast({ title: 'Category updated', description: `Category renamed to "${editCategoryDialog.newName}".` });
+    setEditCategoryDialog({ open: false, name: '', newName: '' });
+  };
+
+  const handleDeleteCategory = () => {
+    deleteCategory(deleteDialog.category);
+    toast({ title: 'Category deleted', description: `"${deleteDialog.category}" has been removed.` });
+    setDeleteDialog({ open: false, type: 'category', category: '' });
+  };
+
+  const handleAddSubcategory = () => {
+    if (!addSubcategoryDialog.name.trim()) return;
+    addSubcategory(addSubcategoryDialog.category, addSubcategoryDialog.name.trim());
+    toast({ title: 'Subcategory added', description: `"${addSubcategoryDialog.name}" added to ${addSubcategoryDialog.category}.` });
+    setAddSubcategoryDialog({ open: false, category: '', name: '' });
+  };
+
+  const handleUpdateSubcategory = () => {
+    if (!editSubcategoryDialog.newName.trim()) return;
+    updateSubcategory(editSubcategoryDialog.category, editSubcategoryDialog.oldName, editSubcategoryDialog.newName.trim());
+    toast({ title: 'Subcategory updated', description: `Subcategory renamed to "${editSubcategoryDialog.newName}".` });
+    setEditSubcategoryDialog({ open: false, category: '', oldName: '', newName: '' });
+  };
+
+  const handleDeleteSubcategory = () => {
+    deleteSubcategory(deleteDialog.category, deleteDialog.subcategory!);
+    toast({ title: 'Subcategory deleted', description: `"${deleteDialog.subcategory}" has been removed.` });
+    setDeleteDialog({ open: false, type: 'category', category: '' });
   };
 
   return (
@@ -112,27 +171,99 @@ const AdminCategories = () => {
         {/* Current Categories */}
         <Card>
           <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <FolderTree className="h-5 w-5" />
-              Current Categories ({categories.length})
-            </CardTitle>
-            <CardDescription>Active donation categories and their subcategories</CardDescription>
+            <div className="flex items-center justify-between">
+              <div>
+                <CardTitle className="flex items-center gap-2">
+                  <FolderTree className="h-5 w-5" />
+                  Current Categories ({categories.length})
+                </CardTitle>
+                <CardDescription>Active donation categories and their subcategories</CardDescription>
+              </div>
+              <Dialog open={addCategoryDialog.open} onOpenChange={(open) => setAddCategoryDialog({ ...addCategoryDialog, open })}>
+                <DialogTrigger asChild>
+                  <Button>
+                    <Plus className="h-4 w-4 mr-2" />
+                    Add Category
+                  </Button>
+                </DialogTrigger>
+                <DialogContent>
+                  <DialogHeader>
+                    <DialogTitle>Add New Category</DialogTitle>
+                    <DialogDescription>Create a new donation category</DialogDescription>
+                  </DialogHeader>
+                  <Input
+                    placeholder="Category name"
+                    value={addCategoryDialog.name}
+                    onChange={(e) => setAddCategoryDialog({ ...addCategoryDialog, name: e.target.value })}
+                  />
+                  <DialogFooter>
+                    <Button variant="outline" onClick={() => setAddCategoryDialog({ open: false, name: '' })}>Cancel</Button>
+                    <Button onClick={handleAddCategory}>Add Category</Button>
+                  </DialogFooter>
+                </DialogContent>
+              </Dialog>
+            </div>
           </CardHeader>
           <CardContent>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
               {categories.map((category) => (
                 <div key={category.name} className="p-4 border rounded-lg">
-                  <h3 className="font-semibold mb-2 flex items-center gap-2">
-                    <Tags className="h-4 w-4 text-primary" />
-                    {category.name}
-                  </h3>
-                  <div className="flex flex-wrap gap-1">
+                  <div className="flex items-center justify-between mb-3">
+                    <h3 className="font-semibold flex items-center gap-2">
+                      <Tags className="h-4 w-4 text-primary" />
+                      {category.name}
+                    </h3>
+                    <div className="flex gap-1">
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-8 w-8"
+                        onClick={() => setEditCategoryDialog({ open: true, name: category.name, newName: category.name })}
+                      >
+                        <Pencil className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-8 w-8 text-destructive hover:text-destructive"
+                        onClick={() => setDeleteDialog({ open: true, type: 'category', category: category.name })}
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  </div>
+                  <div className="flex flex-wrap gap-1 mb-3">
                     {category.subcategories.map((sub) => (
-                      <Badge key={sub} variant="secondary" className="text-xs">
+                      <Badge 
+                        key={sub} 
+                        variant="secondary" 
+                        className="text-xs flex items-center gap-1 pr-1"
+                      >
                         {sub}
+                        <button
+                          className="ml-1 hover:text-primary"
+                          onClick={() => setEditSubcategoryDialog({ open: true, category: category.name, oldName: sub, newName: sub })}
+                        >
+                          <Pencil className="h-3 w-3" />
+                        </button>
+                        <button
+                          className="hover:text-destructive"
+                          onClick={() => setDeleteDialog({ open: true, type: 'subcategory', category: category.name, subcategory: sub })}
+                        >
+                          <XCircle className="h-3 w-3" />
+                        </button>
                       </Badge>
                     ))}
                   </div>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="w-full"
+                    onClick={() => setAddSubcategoryDialog({ open: true, category: category.name, name: '' })}
+                  >
+                    <Plus className="h-3 w-3 mr-1" />
+                    Add Subcategory
+                  </Button>
                 </div>
               ))}
             </div>
@@ -176,16 +307,97 @@ const AdminCategories = () => {
           </Card>
         )}
 
-        {pendingProposals.length === 0 && reviewedProposals.length === 0 && (
+        {pendingProposals.length === 0 && reviewedProposals.length === 0 && categories.length === 0 && (
           <Card>
             <CardContent className="py-8 text-center text-muted-foreground">
               <Tags className="h-12 w-12 mx-auto mb-4 opacity-50" />
-              <p>No category proposals yet.</p>
-              <p className="text-sm">Organizations can propose new categories from their dashboard.</p>
+              <p>No categories yet.</p>
+              <p className="text-sm">Add categories using the button above.</p>
             </CardContent>
           </Card>
         )}
       </main>
+
+      {/* Edit Category Dialog */}
+      <Dialog open={editCategoryDialog.open} onOpenChange={(open) => setEditCategoryDialog({ ...editCategoryDialog, open })}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Edit Category</DialogTitle>
+            <DialogDescription>Rename the category "{editCategoryDialog.name}"</DialogDescription>
+          </DialogHeader>
+          <Input
+            placeholder="Category name"
+            value={editCategoryDialog.newName}
+            onChange={(e) => setEditCategoryDialog({ ...editCategoryDialog, newName: e.target.value })}
+          />
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setEditCategoryDialog({ open: false, name: '', newName: '' })}>Cancel</Button>
+            <Button onClick={handleUpdateCategory}>Save Changes</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Edit Subcategory Dialog */}
+      <Dialog open={editSubcategoryDialog.open} onOpenChange={(open) => setEditSubcategoryDialog({ ...editSubcategoryDialog, open })}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Edit Subcategory</DialogTitle>
+            <DialogDescription>Rename the subcategory "{editSubcategoryDialog.oldName}" in {editSubcategoryDialog.category}</DialogDescription>
+          </DialogHeader>
+          <Input
+            placeholder="Subcategory name"
+            value={editSubcategoryDialog.newName}
+            onChange={(e) => setEditSubcategoryDialog({ ...editSubcategoryDialog, newName: e.target.value })}
+          />
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setEditSubcategoryDialog({ open: false, category: '', oldName: '', newName: '' })}>Cancel</Button>
+            <Button onClick={handleUpdateSubcategory}>Save Changes</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Add Subcategory Dialog */}
+      <Dialog open={addSubcategoryDialog.open} onOpenChange={(open) => setAddSubcategoryDialog({ ...addSubcategoryDialog, open })}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Add Subcategory</DialogTitle>
+            <DialogDescription>Add a new subcategory to {addSubcategoryDialog.category}</DialogDescription>
+          </DialogHeader>
+          <Input
+            placeholder="Subcategory name"
+            value={addSubcategoryDialog.name}
+            onChange={(e) => setAddSubcategoryDialog({ ...addSubcategoryDialog, name: e.target.value })}
+          />
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setAddSubcategoryDialog({ open: false, category: '', name: '' })}>Cancel</Button>
+            <Button onClick={handleAddSubcategory}>Add Subcategory</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete Confirmation Dialog */}
+      <Dialog open={deleteDialog.open} onOpenChange={(open) => setDeleteDialog({ ...deleteDialog, open })}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Confirm Deletion</DialogTitle>
+            <DialogDescription>
+              {deleteDialog.type === 'category' 
+                ? `Are you sure you want to delete "${deleteDialog.category}" and all its subcategories?`
+                : `Are you sure you want to delete the subcategory "${deleteDialog.subcategory}" from ${deleteDialog.category}?`
+              }
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setDeleteDialog({ open: false, type: 'category', category: '' })}>Cancel</Button>
+            <Button 
+              variant="destructive" 
+              onClick={deleteDialog.type === 'category' ? handleDeleteCategory : handleDeleteSubcategory}
+            >
+              Delete
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
