@@ -1,9 +1,16 @@
+import { useState } from "react";
+import { Link } from "react-router-dom";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import {
   Carousel,
   CarouselContent,
@@ -11,7 +18,8 @@ import {
   CarouselNext,
   CarouselPrevious,
 } from "@/components/ui/carousel";
-import { Heart, Quote, Play, Users, Gift, Calendar } from "lucide-react";
+import { Heart, Quote, Play, Users, Gift, Calendar, Send } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
 
 const impactMedia = [
   {
@@ -121,6 +129,38 @@ const impactStats = [
 ];
 
 const ImpactStories = () => {
+  const { toast } = useToast();
+  const [isStoryDialogOpen, setIsStoryDialogOpen] = useState(false);
+  const [storyFormData, setStoryFormData] = useState({
+    name: "",
+    location: "",
+    storyType: "",
+    story: "",
+    itemOrEvent: "",
+  });
+
+  const handleStorySubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (!storyFormData.name || !storyFormData.location || !storyFormData.storyType || !storyFormData.story) {
+      toast({
+        title: "Missing Information",
+        description: "Please fill in all required fields.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // In a real app, this would save to a database
+    toast({
+      title: "Story Submitted!",
+      description: "Thank you for sharing your story. Our team will review it and may feature it on our page.",
+    });
+
+    setStoryFormData({ name: "", location: "", storyType: "", story: "", itemOrEvent: "" });
+    setIsStoryDialogOpen(false);
+  };
+
   return (
     <div className="min-h-screen bg-background">
       <Navbar />
@@ -247,12 +287,94 @@ const ImpactStories = () => {
                   Every donation creates a new story of hope. Join our community of givers today.
                 </p>
                 <div className="flex flex-col sm:flex-row gap-4 justify-center">
-                  <Button size="lg" variant="secondary" className="font-semibold">
-                    Start Donating
-                  </Button>
-                  <Button size="lg" variant="outline" className="bg-transparent border-primary-foreground text-primary-foreground hover:bg-primary-foreground/10">
-                    Share Your Story
-                  </Button>
+                  <Link to="/donate">
+                    <Button size="lg" variant="secondary" className="font-semibold">
+                      Start Donating
+                    </Button>
+                  </Link>
+                  <Dialog open={isStoryDialogOpen} onOpenChange={setIsStoryDialogOpen}>
+                    <DialogTrigger asChild>
+                      <Button size="lg" variant="outline" className="bg-transparent border-primary-foreground text-primary-foreground hover:bg-primary-foreground/10">
+                        Share Your Story
+                      </Button>
+                    </DialogTrigger>
+                    <DialogContent className="max-w-lg">
+                      <DialogHeader>
+                        <DialogTitle>Share Your Impact Story</DialogTitle>
+                      </DialogHeader>
+                      <form onSubmit={handleStorySubmit} className="space-y-4">
+                        <div className="grid grid-cols-2 gap-4">
+                          <div className="space-y-2">
+                            <Label htmlFor="name">Your Name *</Label>
+                            <Input
+                              id="name"
+                              placeholder="e.g., John Tan"
+                              value={storyFormData.name}
+                              onChange={(e) => setStoryFormData({ ...storyFormData, name: e.target.value })}
+                            />
+                          </div>
+                          <div className="space-y-2">
+                            <Label htmlFor="location">Location *</Label>
+                            <Input
+                              id="location"
+                              placeholder="e.g., Tampines"
+                              value={storyFormData.location}
+                              onChange={(e) => setStoryFormData({ ...storyFormData, location: e.target.value })}
+                            />
+                          </div>
+                        </div>
+
+                        <div className="space-y-2">
+                          <Label htmlFor="storyType">How were you helped? *</Label>
+                          <Select
+                            value={storyFormData.storyType}
+                            onValueChange={(value) => setStoryFormData({ ...storyFormData, storyType: value })}
+                          >
+                            <SelectTrigger>
+                              <SelectValue placeholder="Select type" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="item">Received a donated item</SelectItem>
+                              <SelectItem value="crowdfunding">Helped through crowdfunding</SelectItem>
+                              <SelectItem value="volunteer">Participated in a volunteer event</SelectItem>
+                              <SelectItem value="donor">I am a donor sharing my experience</SelectItem>
+                              <SelectItem value="other">Other</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
+
+                        <div className="space-y-2">
+                          <Label htmlFor="itemOrEvent">Item received or event attended</Label>
+                          <Input
+                            id="itemOrEvent"
+                            placeholder="e.g., Laptop, Christmas Meal Distribution"
+                            value={storyFormData.itemOrEvent}
+                            onChange={(e) => setStoryFormData({ ...storyFormData, itemOrEvent: e.target.value })}
+                          />
+                        </div>
+
+                        <div className="space-y-2">
+                          <Label htmlFor="story">Your Story *</Label>
+                          <Textarea
+                            id="story"
+                            placeholder="Share how GiveLocal has made a difference in your life..."
+                            rows={5}
+                            value={storyFormData.story}
+                            onChange={(e) => setStoryFormData({ ...storyFormData, story: e.target.value })}
+                          />
+                        </div>
+
+                        <p className="text-sm text-muted-foreground">
+                          By submitting, you agree to let us feature your story on our platform. We may edit for clarity.
+                        </p>
+
+                        <Button type="submit" className="w-full gap-2">
+                          <Send className="w-4 h-4" />
+                          Submit Your Story
+                        </Button>
+                      </form>
+                    </DialogContent>
+                  </Dialog>
                 </div>
               </CardContent>
             </Card>

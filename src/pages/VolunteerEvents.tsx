@@ -1,104 +1,195 @@
+import { useState } from "react";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { useAuth } from "@/contexts/AuthContext";
+import { useToast } from "@/hooks/use-toast";
 import { Heart, MapPin, Calendar, Clock, Users, Building2, CheckCircle } from "lucide-react";
 import { format } from "date-fns";
 
-// Mock volunteer events data
-const mockEvents = [
-  {
-    id: "1",
-    organizationId: "org-1",
-    organizationName: "Willing Hearts Singapore",
-    title: "Weekend Meal Preparation",
-    description: "Help prepare and pack meals for elderly and low-income families. No cooking experience required!",
-    location: "8 Lorong 8 Toa Payoh, Singapore 319254",
-    date: "2024-12-21",
-    startTime: "08:00",
-    endTime: "12:00",
-    spotsTotal: 30,
-    spotsFilled: 22,
-    image: "https://images.unsplash.com/photo-1556909114-f6e7ad7d3136?w=600&h=400&fit=crop",
-    status: "upcoming" as const,
-    requirements: ["Bring own apron", "Comfortable shoes"],
-  },
-  {
-    id: "2",
-    organizationId: "org-2",
-    organizationName: "SPCA Singapore",
-    title: "Animal Shelter Cleaning Day",
-    description: "Help clean and maintain our animal shelter. Interact with rescued animals and make their day brighter!",
-    location: "50 Sungei Tengah Road, Singapore 699012",
-    date: "2024-12-22",
-    startTime: "09:00",
-    endTime: "13:00",
-    spotsTotal: 20,
-    spotsFilled: 15,
-    image: "https://images.unsplash.com/photo-1601758124096-1fd661873b95?w=600&h=400&fit=crop",
-    status: "upcoming" as const,
-    requirements: ["Wear old clothes", "Must love animals"],
-  },
-  {
-    id: "3",
-    organizationId: "org-3",
-    organizationName: "MINDS Singapore",
-    title: "Art Therapy Session Support",
-    description: "Assist our therapists in running art therapy sessions for persons with intellectual disabilities.",
-    location: "MINDS Towner Gardens, 6 Lengkok Bahru, Singapore 159051",
-    date: "2024-12-28",
-    startTime: "14:00",
-    endTime: "17:00",
-    spotsTotal: 10,
-    spotsFilled: 6,
-    image: "https://images.unsplash.com/photo-1522202176988-66273c2fd55f?w=600&h=400&fit=crop",
-    status: "upcoming" as const,
-    requirements: ["Prior volunteer experience preferred", "Patient and compassionate"],
-  },
-  {
-    id: "4",
-    organizationId: "org-4",
-    organizationName: "Salvation Army Singapore",
-    title: "Donation Sorting Marathon",
-    description: "Help sort, clean, and organize donated items at our distribution center.",
-    location: "20 Bishan Street 22, Singapore 579768",
-    date: "2025-01-04",
-    startTime: "10:00",
-    endTime: "16:00",
-    spotsTotal: 50,
-    spotsFilled: 28,
-    image: "https://images.unsplash.com/photo-1532629345422-7515f3d16bb6?w=600&h=400&fit=crop",
-    status: "upcoming" as const,
-    requirements: ["Comfortable lifting boxes", "Lunch will be provided"],
-  },
-  {
-    id: "5",
-    organizationId: "org-1",
-    organizationName: "Willing Hearts Singapore",
-    title: "Christmas Meal Distribution",
-    description: "Special Christmas event to distribute festive meals to beneficiaries across Singapore.",
-    location: "Various locations island-wide",
-    date: "2024-12-25",
-    startTime: "10:00",
-    endTime: "14:00",
-    spotsTotal: 100,
-    spotsFilled: 100,
-    image: "https://images.unsplash.com/photo-1513885535751-8b9238bd345a?w=600&h=400&fit=crop",
-    status: "full" as const,
-    requirements: ["Own transport preferred", "Festive spirit!"],
-  },
-];
+interface VolunteerEvent {
+  id: string;
+  organizationId: string;
+  organizationName: string;
+  title: string;
+  description: string;
+  location: string;
+  date: string;
+  startTime: string;
+  endTime: string;
+  spotsTotal: number;
+  spotsFilled: number;
+  image: string;
+  status: "upcoming" | "full";
+  requirements: string[];
+}
 
 const VolunteerEvents = () => {
-  const { organizations } = useAuth();
+  const { organizations, user } = useAuth();
+  const { toast } = useToast();
 
-  const upcomingEvents = mockEvents.filter(e => e.status === 'upcoming');
-  const fullEvents = mockEvents.filter(e => e.status === 'full');
+  const [events, setEvents] = useState<VolunteerEvent[]>([
+    {
+      id: "1",
+      organizationId: "org-1",
+      organizationName: "Willing Hearts Singapore",
+      title: "Weekend Meal Preparation",
+      description: "Help prepare and pack meals for elderly and low-income families. No cooking experience required!",
+      location: "8 Lorong 8 Toa Payoh, Singapore 319254",
+      date: "2024-12-21",
+      startTime: "08:00",
+      endTime: "12:00",
+      spotsTotal: 30,
+      spotsFilled: 22,
+      image: "https://images.unsplash.com/photo-1556909114-f6e7ad7d3136?w=600&h=400&fit=crop",
+      status: "upcoming" as const,
+      requirements: ["Bring own apron", "Comfortable shoes"],
+    },
+    {
+      id: "2",
+      organizationId: "org-2",
+      organizationName: "SPCA Singapore",
+      title: "Animal Shelter Cleaning Day",
+      description: "Help clean and maintain our animal shelter. Interact with rescued animals and make their day brighter!",
+      location: "50 Sungei Tengah Road, Singapore 699012",
+      date: "2024-12-22",
+      startTime: "09:00",
+      endTime: "13:00",
+      spotsTotal: 20,
+      spotsFilled: 15,
+      image: "https://images.unsplash.com/photo-1601758124096-1fd661873b95?w=600&h=400&fit=crop",
+      status: "upcoming" as const,
+      requirements: ["Wear old clothes", "Must love animals"],
+    },
+    {
+      id: "3",
+      organizationId: "org-3",
+      organizationName: "MINDS Singapore",
+      title: "Art Therapy Session Support",
+      description: "Assist our therapists in running art therapy sessions for persons with intellectual disabilities.",
+      location: "MINDS Towner Gardens, 6 Lengkok Bahru, Singapore 159051",
+      date: "2024-12-28",
+      startTime: "14:00",
+      endTime: "17:00",
+      spotsTotal: 10,
+      spotsFilled: 6,
+      image: "https://images.unsplash.com/photo-1522202176988-66273c2fd55f?w=600&h=400&fit=crop",
+      status: "upcoming" as const,
+      requirements: ["Prior volunteer experience preferred", "Patient and compassionate"],
+    },
+    {
+      id: "4",
+      organizationId: "org-4",
+      organizationName: "Salvation Army Singapore",
+      title: "Donation Sorting Marathon",
+      description: "Help sort, clean, and organize donated items at our distribution center.",
+      location: "20 Bishan Street 22, Singapore 579768",
+      date: "2025-01-04",
+      startTime: "10:00",
+      endTime: "16:00",
+      spotsTotal: 50,
+      spotsFilled: 28,
+      image: "https://images.unsplash.com/photo-1532629345422-7515f3d16bb6?w=600&h=400&fit=crop",
+      status: "upcoming" as const,
+      requirements: ["Comfortable lifting boxes", "Lunch will be provided"],
+    },
+    {
+      id: "5",
+      organizationId: "org-1",
+      organizationName: "Willing Hearts Singapore",
+      title: "Christmas Meal Distribution",
+      description: "Special Christmas event to distribute festive meals to beneficiaries across Singapore.",
+      location: "Various locations island-wide",
+      date: "2024-12-25",
+      startTime: "10:00",
+      endTime: "14:00",
+      spotsTotal: 100,
+      spotsFilled: 100,
+      image: "https://images.unsplash.com/photo-1513885535751-8b9238bd345a?w=600&h=400&fit=crop",
+      status: "full" as const,
+      requirements: ["Own transport preferred", "Festive spirit!"],
+    },
+  ]);
+
+  const [selectedEvent, setSelectedEvent] = useState<VolunteerEvent | null>(null);
+  const [isSignupDialogOpen, setIsSignupDialogOpen] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [signupSuccess, setSignupSuccess] = useState(false);
+  const [formData, setFormData] = useState({
+    name: "",
+    email: "",
+    phone: "",
+    experience: "",
+  });
+
+  const [totalVolunteers, setTotalVolunteers] = useState(500);
+
+  const upcomingEvents = events.filter(e => e.status === 'upcoming');
+  const fullEvents = events.filter(e => e.status === 'full');
 
   const getSpotsRemaining = (total: number, filled: number) => total - filled;
+
+  const handleSignupClick = (event: VolunteerEvent) => {
+    setSelectedEvent(event);
+    setSignupSuccess(false);
+    setFormData({
+      name: user?.name || "",
+      email: user?.email || "",
+      phone: "",
+      experience: "",
+    });
+    setIsSignupDialogOpen(true);
+  };
+
+  const handleSignupSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (!formData.name || !formData.email || !formData.phone) {
+      toast({
+        title: "Missing Information",
+        description: "Please fill in all required fields.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setIsSubmitting(true);
+
+    // Simulate API call
+    await new Promise(resolve => setTimeout(resolve, 1500));
+
+    // Update event with new volunteer
+    setEvents(prev => prev.map(event => {
+      if (event.id === selectedEvent?.id) {
+        const newSpotsFilled = event.spotsFilled + 1;
+        return {
+          ...event,
+          spotsFilled: newSpotsFilled,
+          status: newSpotsFilled >= event.spotsTotal ? "full" as const : "upcoming" as const,
+        };
+      }
+      return event;
+    }));
+
+    // Increment total volunteers
+    setTotalVolunteers(prev => prev + 1);
+
+    setIsSubmitting(false);
+    setSignupSuccess(true);
+  };
+
+  const closeSignupDialog = () => {
+    setIsSignupDialogOpen(false);
+    setSelectedEvent(null);
+    setSignupSuccess(false);
+  };
 
   return (
     <div className="min-h-screen bg-background">
@@ -133,7 +224,7 @@ const VolunteerEvents = () => {
             <Card className="text-center p-4">
               <CardContent className="p-0">
                 <Users className="w-6 h-6 mx-auto mb-2 text-secondary" />
-                <div className="text-2xl font-bold">500+</div>
+                <div className="text-2xl font-bold">{totalVolunteers}+</div>
                 <div className="text-xs text-muted-foreground">Active Volunteers</div>
               </CardContent>
             </Card>
@@ -212,7 +303,9 @@ const VolunteerEvents = () => {
                         </div>
                       )}
                       
-                      <Button className="w-full">Sign Up to Volunteer</Button>
+                      <Button className="w-full" onClick={() => handleSignupClick(event)}>
+                        Sign Up to Volunteer
+                      </Button>
                     </div>
                   </div>
                 </Card>
@@ -288,6 +381,111 @@ const VolunteerEvents = () => {
           </section>
         </div>
       </main>
+
+      {/* Signup Dialog */}
+      <Dialog open={isSignupDialogOpen} onOpenChange={closeSignupDialog}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>
+              {signupSuccess ? "Registration Successful!" : `Sign Up: ${selectedEvent?.title}`}
+            </DialogTitle>
+          </DialogHeader>
+          
+          {signupSuccess ? (
+            <div className="text-center py-8">
+              <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-4">
+                <CheckCircle className="w-8 h-8 text-primary" />
+              </div>
+              <h3 className="text-xl font-semibold mb-2">You're Registered!</h3>
+              <p className="text-muted-foreground mb-4">
+                Thank you for signing up to volunteer at {selectedEvent?.title}.
+              </p>
+              <div className="text-sm text-muted-foreground space-y-1">
+                <p><strong>Date:</strong> {selectedEvent && format(new Date(selectedEvent.date), 'EEEE, MMMM d, yyyy')}</p>
+                <p><strong>Time:</strong> {selectedEvent?.startTime} - {selectedEvent?.endTime}</p>
+                <p><strong>Location:</strong> {selectedEvent?.location}</p>
+              </div>
+              <p className="text-sm text-muted-foreground mt-4">
+                A confirmation email will be sent to {formData.email}.
+              </p>
+              <Button className="mt-6" onClick={closeSignupDialog}>
+                Close
+              </Button>
+            </div>
+          ) : (
+            <form onSubmit={handleSignupSubmit} className="space-y-4">
+              <div className="bg-muted/50 p-4 rounded-lg space-y-1 text-sm">
+                <p><strong>Event:</strong> {selectedEvent?.title}</p>
+                <p><strong>Date:</strong> {selectedEvent && format(new Date(selectedEvent.date), 'EEEE, MMMM d, yyyy')}</p>
+                <p><strong>Time:</strong> {selectedEvent?.startTime} - {selectedEvent?.endTime}</p>
+                <p><strong>Spots Remaining:</strong> {selectedEvent && getSpotsRemaining(selectedEvent.spotsTotal, selectedEvent.spotsFilled)}</p>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="name">Full Name *</Label>
+                <Input
+                  id="name"
+                  placeholder="John Tan"
+                  value={formData.name}
+                  onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="email">Email Address *</Label>
+                <Input
+                  id="email"
+                  type="email"
+                  placeholder="john@example.com"
+                  value={formData.email}
+                  onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="phone">Phone Number *</Label>
+                <Input
+                  id="phone"
+                  placeholder="+65 9123 4567"
+                  value={formData.phone}
+                  onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="experience">Relevant Experience (Optional)</Label>
+                <Textarea
+                  id="experience"
+                  placeholder="Tell us about any relevant volunteering experience..."
+                  rows={3}
+                  value={formData.experience}
+                  onChange={(e) => setFormData({ ...formData, experience: e.target.value })}
+                />
+              </div>
+
+              {selectedEvent?.requirements && selectedEvent.requirements.length > 0 && (
+                <div className="bg-muted/50 p-4 rounded-lg">
+                  <p className="text-sm font-medium mb-2">Requirements:</p>
+                  <ul className="text-sm text-muted-foreground list-disc list-inside">
+                    {selectedEvent.requirements.map((req, idx) => (
+                      <li key={idx}>{req}</li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+
+              <DialogFooter>
+                <Button type="button" variant="outline" onClick={closeSignupDialog}>
+                  Cancel
+                </Button>
+                <Button type="submit" disabled={isSubmitting}>
+                  {isSubmitting ? "Submitting..." : "Confirm Registration"}
+                </Button>
+              </DialogFooter>
+            </form>
+          )}
+        </DialogContent>
+      </Dialog>
 
       <Footer />
     </div>
