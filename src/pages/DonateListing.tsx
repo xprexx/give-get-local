@@ -14,7 +14,7 @@ import { useToast } from "@/hooks/use-toast";
 import { Heart, Upload, X, MapPin, Image as ImageIcon, Package, CheckCircle } from "lucide-react";
 
 const DonateListing = () => {
-  const { user, categories } = useAuth();
+  const { user, categories, createDonationListing } = useAuth();
   const { toast } = useToast();
   const navigate = useNavigate();
   
@@ -92,8 +92,16 @@ const DonateListing = () => {
 
     setIsSubmitting(true);
 
-    // Simulate API call
-    await new Promise(resolve => setTimeout(resolve, 1500));
+    // Save the listing
+    createDonationListing({
+      title: formData.title,
+      description: formData.description,
+      images,
+      category: formData.category,
+      subcategory: formData.subcategory || undefined,
+      condition: formData.condition,
+      pickupLocation: formData.pickupLocation,
+    });
 
     setIsSubmitting(false);
     setIsSubmitted(true);
