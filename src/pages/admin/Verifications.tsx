@@ -5,6 +5,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Badge } from '@/components/ui/badge';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
+import { useNotifications } from '@/contexts/NotificationContext';
 import {
   Dialog,
   DialogContent,
@@ -17,6 +18,7 @@ import {
 const AdminVerifications = () => {
   const { users, organizations, approveUser, rejectUser, approveOrganization, rejectOrganization } = useAuth();
   const { toast } = useToast();
+  const { addNotification } = useNotifications();
 
   // Get pending beneficiaries
   const pendingBeneficiaries = users.filter(u => u.role === 'beneficiary' && u.status === 'pending');
@@ -29,6 +31,12 @@ const AdminVerifications = () => {
 
   const handleApproveBeneficiary = (userId: string, userName: string) => {
     approveUser(userId);
+    addNotification({
+      type: 'approval',
+      title: 'Beneficiary Approved',
+      message: `${userName} has been verified and can now access the platform.`,
+      link: '/admin/verifications',
+    });
     toast({
       title: 'Beneficiary Approved',
       description: `${userName} has been verified and can now access the platform.`,
@@ -37,6 +45,12 @@ const AdminVerifications = () => {
 
   const handleRejectBeneficiary = (userId: string, userName: string) => {
     rejectUser(userId);
+    addNotification({
+      type: 'system',
+      title: 'Beneficiary Rejected',
+      message: `${userName}'s verification has been rejected.`,
+      link: '/admin/verifications',
+    });
     toast({
       title: 'Beneficiary Rejected',
       description: `${userName}'s verification has been rejected.`,
@@ -46,6 +60,12 @@ const AdminVerifications = () => {
 
   const handleApproveOrg = (orgId: string, orgName: string) => {
     approveOrganization(orgId);
+    addNotification({
+      type: 'approval',
+      title: 'Organization Approved',
+      message: `${orgName} has been verified and can now access the platform.`,
+      link: '/admin/organizations',
+    });
     toast({
       title: 'Organization Approved',
       description: `${orgName} has been verified and can now access the platform.`,
@@ -54,6 +74,12 @@ const AdminVerifications = () => {
 
   const handleRejectOrg = (orgId: string, orgName: string) => {
     rejectOrganization(orgId);
+    addNotification({
+      type: 'system',
+      title: 'Organization Rejected',
+      message: `${orgName}'s verification has been rejected.`,
+      link: '/admin/organizations',
+    });
     toast({
       title: 'Organization Rejected',
       description: `${orgName}'s verification has been rejected.`,

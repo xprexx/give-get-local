@@ -1,9 +1,10 @@
 import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Heart, Menu, X, LogOut, User, Building2, Shield, HandHeart, Package } from "lucide-react";
+import { Heart, Menu, X, LogOut, User, Building2, Shield, HandHeart } from "lucide-react";
 import { useState } from "react";
 import { useAuth } from "@/contexts/AuthContext";
+import NotificationDropdown from "@/components/NotificationDropdown";
 
 const Navbar = () => {
   const [isOpen, setIsOpen] = useState(false);
@@ -68,6 +69,7 @@ const Navbar = () => {
           <div className="hidden md:flex items-center gap-3">
             {user ? (
               <>
+                <NotificationDropdown />
                 <Link to={getDashboardLink()}>
                   <Button variant="ghost" className="gap-2">
                     {user.role === 'admin' && <Shield className="h-4 w-4" />}

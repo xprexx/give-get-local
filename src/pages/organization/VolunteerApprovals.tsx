@@ -6,6 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
+import { useNotifications } from "@/contexts/NotificationContext";
 import { 
   Users, ArrowLeft, Calendar, Clock, Mail, Phone, 
   CheckCircle, XCircle, User, Hourglass 
@@ -104,6 +105,7 @@ const mockRegistrations: VolunteerRegistration[] = [
 const OrganizationVolunteerApprovals = () => {
   const { user, organizations } = useAuth();
   const { toast } = useToast();
+  const { addNotification } = useNotifications();
   const [registrations, setRegistrations] = useState<VolunteerRegistration[]>(mockRegistrations);
   const [events, setEvents] = useState(mockEvents);
 
@@ -128,6 +130,13 @@ const OrganizationVolunteerApprovals = () => {
         ? { ...e, spotsFilled: e.spotsFilled + 1 }
         : e
     ));
+
+    // Add notification
+    addNotification({
+      type: 'approval',
+      title: 'Volunteer Approved',
+      message: `${registration.name} has been approved for ${registration.eventTitle}.`,
+    });
 
     toast({
       title: "Volunteer Approved",
