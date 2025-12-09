@@ -2,18 +2,25 @@ import { useAuth } from '@/contexts/AuthContext';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Link } from 'react-router-dom';
-import { Users, Building2, Tags, TrendingUp, AlertCircle, CheckCircle, LogOut } from 'lucide-react';
+import { Users, Building2, Tags, TrendingUp, AlertCircle, CheckCircle, LogOut, ShieldCheck, HandHeart } from 'lucide-react';
 
 const AdminDashboard = () => {
   const { users, organizations, categoryProposals, logout } = useAuth();
 
+  const pendingBeneficiaries = users.filter(u => u.role === 'beneficiary' && u.status === 'pending').length;
+  const pendingOrgs = organizations.filter(o => o.status === 'pending').length;
+  const totalPendingVerifications = pendingBeneficiaries + pendingOrgs;
+
   const stats = {
     totalUsers: users.filter(u => u.role === 'user').length,
+    totalBeneficiaries: users.filter(u => u.role === 'beneficiary').length,
     totalOrganizations: organizations.length,
-    pendingOrgs: organizations.filter(o => o.status === 'pending').length,
+    pendingOrgs,
+    pendingBeneficiaries,
+    totalPendingVerifications,
     pendingProposals: categoryProposals.filter(p => p.status === 'pending').length,
     bannedUsers: users.filter(u => u.isBanned).length,
-    activeUsers: users.filter(u => !u.isBanned).length,
+    activeUsers: users.filter(u => !u.isBanned && u.role !== 'admin').length,
   };
 
   return (
@@ -38,16 +45,29 @@ const AdminDashboard = () => {
 
       <main className="container mx-auto px-4 py-8">
         {/* Stats Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6 mb-8">
           <Card>
             <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardTitle className="text-sm font-medium">Total Users</CardTitle>
+              <CardTitle className="text-sm font-medium">Regular Users</CardTitle>
               <Users className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">{stats.totalUsers}</div>
               <p className="text-xs text-muted-foreground">
-                {stats.activeUsers} active, {stats.bannedUsers} banned
+                Standard accounts
+              </p>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between pb-2">
+              <CardTitle className="text-sm font-medium">Beneficiaries</CardTitle>
+              <HandHeart className="h-4 w-4 text-amber-600" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">{stats.totalBeneficiaries}</div>
+              <p className="text-xs text-muted-foreground">
+                {stats.pendingBeneficiaries} pending verification
               </p>
             </CardContent>
           </Card>
@@ -89,7 +109,29 @@ const AdminDashboard = () => {
         </div>
 
         {/* Quick Actions */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+          <Link to="/admin/verifications">
+            <Card className="hover:shadow-lg transition-shadow cursor-pointer h-full border-amber-200 bg-amber-50/50">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <ShieldCheck className="h-5 w-5 text-amber-600" />
+                  Verifications
+                  {stats.totalPendingVerifications > 0 && (
+                    <span className="bg-amber-500 text-white text-xs px-2 py-0.5 rounded-full">
+                      {stats.totalPendingVerifications}
+                    </span>
+                  )}
+                </CardTitle>
+                <CardDescription>
+                  Review beneficiary and organization documents
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <Button className="w-full bg-amber-600 hover:bg-amber-700">Review Verifications</Button>
+              </CardContent>
+            </Card>
+          </Link>
+
           <Link to="/admin/users">
             <Card className="hover:shadow-lg transition-shadow cursor-pointer h-full">
               <CardHeader>
@@ -113,18 +155,13 @@ const AdminDashboard = () => {
                 <CardTitle className="flex items-center gap-2">
                   <Building2 className="h-5 w-5 text-secondary" />
                   Organizations
-                  {stats.pendingOrgs > 0 && (
-                    <span className="bg-amber-500 text-white text-xs px-2 py-0.5 rounded-full">
-                      {stats.pendingOrgs}
-                    </span>
-                  )}
                 </CardTitle>
                 <CardDescription>
-                  Review and approve organization registrations
+                  View all registered organizations
                 </CardDescription>
               </CardHeader>
               <CardContent>
-                <Button className="w-full" variant="secondary">Review Organizations</Button>
+                <Button className="w-full" variant="secondary">View Organizations</Button>
               </CardContent>
             </Card>
           </Link>
@@ -160,16 +197,18 @@ const AdminDashboard = () => {
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
-              {stats.pendingOrgs > 0 && (
+              {stats.totalPendingVerifications > 0 && (
                 <div className="flex items-center gap-3 p-3 bg-amber-50 rounded-lg border border-amber-200">
-                  <AlertCircle className="h-5 w-5 text-amber-600" />
+                  <ShieldCheck className="h-5 w-5 text-amber-600" />
                   <div className="flex-1">
                     <p className="font-medium text-amber-800">
-                      {stats.pendingOrgs} organization(s) awaiting approval
+                      {stats.totalPendingVerifications} verification(s) awaiting review
                     </p>
-                    <p className="text-sm text-amber-600">Review their applications</p>
+                    <p className="text-sm text-amber-600">
+                      {stats.pendingBeneficiaries} beneficiary, {stats.pendingOrgs} organization
+                    </p>
                   </div>
-                  <Link to="/admin/organizations">
+                  <Link to="/admin/verifications">
                     <Button size="sm" variant="outline">Review</Button>
                   </Link>
                 </div>
@@ -188,7 +227,7 @@ const AdminDashboard = () => {
                   </Link>
                 </div>
               )}
-              {stats.pendingOrgs === 0 && stats.pendingProposals === 0 && (
+              {stats.totalPendingVerifications === 0 && stats.pendingProposals === 0 && (
                 <div className="flex items-center gap-3 p-3 bg-green-50 rounded-lg border border-green-200">
                   <CheckCircle className="h-5 w-5 text-green-600" />
                   <div className="flex-1">

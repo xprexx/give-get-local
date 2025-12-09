@@ -14,6 +14,7 @@ import AdminDashboard from "./pages/admin/Dashboard";
 import AdminUsers from "./pages/admin/Users";
 import AdminOrganizations from "./pages/admin/Organizations";
 import AdminCategories from "./pages/admin/Categories";
+import AdminVerifications from "./pages/admin/Verifications";
 import OrganizationDashboard from "./pages/organization/Dashboard";
 import OrganizationProfile from "./pages/organization/Profile";
 import OrganizationCategories from "./pages/organization/Categories";
@@ -54,6 +55,11 @@ const App = () => (
             <Route path="/admin/categories" element={
               <ProtectedRoute allowedRoles={['admin']}>
                 <AdminCategories />
+              </ProtectedRoute>
+            } />
+            <Route path="/admin/verifications" element={
+              <ProtectedRoute allowedRoles={['admin']}>
+                <AdminVerifications />
               </ProtectedRoute>
             } />
 

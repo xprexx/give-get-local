@@ -1,12 +1,17 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 
-export type UserRole = 'user' | 'organization' | 'admin';
+export type UserRole = 'user' | 'beneficiary' | 'organization' | 'admin';
+
+export type UserStatus = 'active' | 'pending' | 'rejected';
 
 export interface User {
   id: string;
   email: string;
   name: string;
   role: UserRole;
+  status: UserStatus;
+  verificationDocument?: string; // base64 stored document
+  verificationDocumentName?: string;
   createdAt: string;
   isBanned: boolean;
 }
@@ -20,6 +25,8 @@ export interface Organization {
   rejectedCategories: string[];
   proposedCategories: string[];
   status: 'pending' | 'approved' | 'rejected';
+  verificationDocument?: string;
+  verificationDocumentName?: string;
   createdAt: string;
 }
 
@@ -41,11 +48,13 @@ interface AuthContextType {
   categoryProposals: CategoryProposal[];
   categories: { name: string; subcategories: string[] }[];
   login: (email: string, password: string) => Promise<{ success: boolean; error?: string }>;
-  signup: (email: string, password: string, name: string, role: UserRole) => Promise<{ success: boolean; error?: string }>;
+  signup: (email: string, password: string, name: string, role: UserRole, verificationDocument?: string, verificationDocumentName?: string) => Promise<{ success: boolean; error?: string }>;
   logout: () => void;
   resetPassword: (userId: string) => void;
   banUser: (userId: string) => void;
   unbanUser: (userId: string) => void;
+  approveUser: (userId: string) => void;
+  rejectUser: (userId: string) => void;
   updateOrganization: (org: Partial<Organization>) => void;
   submitCategoryProposal: (proposal: Omit<CategoryProposal, 'id' | 'status' | 'createdAt'>) => void;
   reviewCategoryProposal: (proposalId: string, status: 'approved' | 'rejected') => void;
@@ -99,6 +108,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         email: 'admin@givelocal.sg',
         name: 'Admin',
         role: 'admin',
+        status: 'active',
         createdAt: new Date().toISOString(),
         isBanned: false,
       };
@@ -128,21 +138,54 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       return { success: false, error: 'Invalid password' };
     }
 
+    // Check if user requires approval
+    if (foundUser.role === 'beneficiary' && foundUser.status === 'pending') {
+      return { success: false, error: 'Your account is pending verification. Please wait for admin approval.' };
+    }
+
+    if (foundUser.role === 'beneficiary' && foundUser.status === 'rejected') {
+      return { success: false, error: 'Your verification was rejected. Please contact support.' };
+    }
+
+    if (foundUser.role === 'organization') {
+      const org = organizations.find(o => o.userId === foundUser.id);
+      if (org?.status === 'pending') {
+        return { success: false, error: 'Your organization is pending verification. Please wait for admin approval.' };
+      }
+      if (org?.status === 'rejected') {
+        return { success: false, error: 'Your organization verification was rejected. Please contact support.' };
+      }
+    }
+
     setUser(foundUser);
     saveToStorage('givelocal_user', foundUser);
     return { success: true };
   };
 
-  const signup = async (email: string, password: string, name: string, role: UserRole): Promise<{ success: boolean; error?: string }> => {
+  const signup = async (
+    email: string, 
+    password: string, 
+    name: string, 
+    role: UserRole,
+    verificationDocument?: string,
+    verificationDocumentName?: string
+  ): Promise<{ success: boolean; error?: string }> => {
     if (users.find(u => u.email === email)) {
       return { success: false, error: 'Email already registered' };
     }
+
+    // Determine initial status based on role
+    const requiresApproval = role === 'beneficiary' || role === 'organization';
+    const initialStatus: UserStatus = requiresApproval ? 'pending' : 'active';
 
     const newUser: User = {
       id: `user-${Date.now()}`,
       email,
       name,
       role,
+      status: initialStatus,
+      verificationDocument: role === 'beneficiary' ? verificationDocument : undefined,
+      verificationDocumentName: role === 'beneficiary' ? verificationDocumentName : undefined,
       createdAt: new Date().toISOString(),
       isBanned: false,
     };
@@ -165,6 +208,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         rejectedCategories: [],
         proposedCategories: [],
         status: 'pending',
+        verificationDocument,
+        verificationDocumentName,
         createdAt: new Date().toISOString(),
       };
       const updatedOrgs = [...organizations, newOrg];
@@ -172,8 +217,12 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       saveToStorage('givelocal_organizations', updatedOrgs);
     }
 
-    setUser(newUser);
-    saveToStorage('givelocal_user', newUser);
+    // Don't auto-login users that require approval
+    if (!requiresApproval) {
+      setUser(newUser);
+      saveToStorage('givelocal_user', newUser);
+    }
+
     return { success: true };
   };
 
@@ -202,6 +251,22 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const unbanUser = (userId: string) => {
     const updatedUsers = users.map(u => 
       u.id === userId ? { ...u, isBanned: false } : u
+    );
+    setUsers(updatedUsers);
+    saveToStorage('givelocal_users', updatedUsers);
+  };
+
+  const approveUser = (userId: string) => {
+    const updatedUsers = users.map(u => 
+      u.id === userId ? { ...u, status: 'active' as UserStatus } : u
+    );
+    setUsers(updatedUsers);
+    saveToStorage('givelocal_users', updatedUsers);
+  };
+
+  const rejectUser = (userId: string) => {
+    const updatedUsers = users.map(u => 
+      u.id === userId ? { ...u, status: 'rejected' as UserStatus } : u
     );
     setUsers(updatedUsers);
     saveToStorage('givelocal_users', updatedUsers);
@@ -264,6 +329,16 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     );
     setOrganizations(updatedOrgs);
     saveToStorage('givelocal_organizations', updatedOrgs);
+
+    // Also update user status
+    const org = organizations.find(o => o.id === orgId);
+    if (org) {
+      const updatedUsers = users.map(u =>
+        u.id === org.userId ? { ...u, status: 'active' as UserStatus } : u
+      );
+      setUsers(updatedUsers);
+      saveToStorage('givelocal_users', updatedUsers);
+    }
   };
 
   const rejectOrganization = (orgId: string) => {
@@ -272,6 +347,16 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     );
     setOrganizations(updatedOrgs);
     saveToStorage('givelocal_organizations', updatedOrgs);
+
+    // Also update user status
+    const org = organizations.find(o => o.id === orgId);
+    if (org) {
+      const updatedUsers = users.map(u =>
+        u.id === org.userId ? { ...u, status: 'rejected' as UserStatus } : u
+      );
+      setUsers(updatedUsers);
+      saveToStorage('givelocal_users', updatedUsers);
+    }
   };
 
   const addCategory = (name: string) => {
@@ -338,6 +423,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       resetPassword,
       banUser,
       unbanUser,
+      approveUser,
+      rejectUser,
       updateOrganization,
       submitCategoryProposal,
       reviewCategoryProposal,
