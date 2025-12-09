@@ -1,6 +1,7 @@
 import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { Heart, Menu, X, LogOut, User, Building2, Shield } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import { Heart, Menu, X, LogOut, User, Building2, Shield, HandHeart } from "lucide-react";
 import { useState } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 
@@ -17,6 +18,7 @@ const Navbar = () => {
   const getDashboardLink = () => {
     if (user?.role === 'admin') return '/admin';
     if (user?.role === 'organization') return '/organization';
+    if (user?.role === 'beneficiary') return '/beneficiary/requests';
     return '/';
   };
 
@@ -36,6 +38,9 @@ const Navbar = () => {
             <Link to="/browse" className="text-muted-foreground hover:text-foreground transition-colors font-medium">
               Browse Items
             </Link>
+            <Link to="/item-requests" className="text-muted-foreground hover:text-foreground transition-colors font-medium">
+              Item Requests
+            </Link>
             <Link to="/organizations" className="text-muted-foreground hover:text-foreground transition-colors font-medium">
               Organizations
             </Link>
@@ -51,8 +56,12 @@ const Navbar = () => {
                   <Button variant="ghost" className="gap-2">
                     {user.role === 'admin' && <Shield className="h-4 w-4" />}
                     {user.role === 'organization' && <Building2 className="h-4 w-4" />}
+                    {user.role === 'beneficiary' && <HandHeart className="h-4 w-4" />}
                     {user.role === 'user' && <User className="h-4 w-4" />}
                     {user.name}
+                    {user.role === 'beneficiary' && (
+                      <Badge variant="success" className="ml-1 text-xs">Verified</Badge>
+                    )}
                   </Button>
                 </Link>
                 <Button variant="ghost" onClick={handleLogout}>
@@ -86,6 +95,9 @@ const Navbar = () => {
               <Link to="/browse" className="text-muted-foreground hover:text-foreground transition-colors font-medium py-2">
                 Browse Items
               </Link>
+              <Link to="/item-requests" className="text-muted-foreground hover:text-foreground transition-colors font-medium py-2">
+                Item Requests
+              </Link>
               <Link to="/organizations" className="text-muted-foreground hover:text-foreground transition-colors font-medium py-2">
                 Organizations
               </Link>
@@ -99,8 +111,9 @@ const Navbar = () => {
                       <Button variant="ghost" className="w-full gap-2">
                         {user.role === 'admin' && <Shield className="h-4 w-4" />}
                         {user.role === 'organization' && <Building2 className="h-4 w-4" />}
+                        {user.role === 'beneficiary' && <HandHeart className="h-4 w-4" />}
                         {user.role === 'user' && <User className="h-4 w-4" />}
-                        Dashboard
+                        {user.role === 'beneficiary' ? 'My Requests' : 'Dashboard'}
                       </Button>
                     </Link>
                     <Button variant="ghost" className="w-full" onClick={handleLogout}>

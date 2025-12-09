@@ -46,11 +46,24 @@ export interface CategoryProposal {
   createdAt: string;
 }
 
+export interface ItemRequest {
+  id: string;
+  userId: string;
+  title: string;
+  description: string;
+  category: string;
+  location: string;
+  urgency: 'low' | 'medium' | 'high';
+  status: 'active' | 'fulfilled' | 'cancelled';
+  createdAt: string;
+}
+
 interface AuthContextType {
   user: User | null;
   users: User[];
   organizations: Organization[];
   categoryProposals: CategoryProposal[];
+  itemRequests: ItemRequest[];
   categories: { name: string; subcategories: string[] }[];
   login: (email: string, password: string) => Promise<{ success: boolean; error?: string }>;
   signup: (email: string, password: string, name: string, role: UserRole, verificationDocument?: string, verificationDocumentName?: string, beneficiaryDetails?: { nric: string; address: string; birthdate: string }) => Promise<{ success: boolean; error?: string }>;
@@ -71,6 +84,9 @@ interface AuthContextType {
   addSubcategory: (categoryName: string, subcategory: string) => void;
   updateSubcategory: (categoryName: string, oldSubcategory: string, newSubcategory: string) => void;
   deleteSubcategory: (categoryName: string, subcategory: string) => void;
+  submitItemRequest: (request: Omit<ItemRequest, 'id' | 'userId' | 'status' | 'createdAt'>) => void;
+  updateItemRequest: (requestId: string, updates: Partial<ItemRequest>) => void;
+  deleteItemRequest: (requestId: string) => void;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -91,6 +107,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [users, setUsers] = useState<User[]>([]);
   const [organizations, setOrganizations] = useState<Organization[]>([]);
   const [categoryProposals, setCategoryProposals] = useState<CategoryProposal[]>([]);
+  const [itemRequests, setItemRequests] = useState<ItemRequest[]>([]);
   const [categories, setCategories] = useState(DEFAULT_CATEGORIES);
 
   useEffect(() => {
@@ -99,12 +116,14 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     const storedOrgs = localStorage.getItem('givelocal_organizations');
     const storedProposals = localStorage.getItem('givelocal_proposals');
     const storedCategories = localStorage.getItem('givelocal_categories');
+    const storedItemRequests = localStorage.getItem('givelocal_item_requests');
 
     if (storedUser) setUser(JSON.parse(storedUser));
     if (storedUsers) setUsers(JSON.parse(storedUsers));
     if (storedOrgs) setOrganizations(JSON.parse(storedOrgs));
     if (storedProposals) setCategoryProposals(JSON.parse(storedProposals));
     if (storedCategories) setCategories(JSON.parse(storedCategories));
+    if (storedItemRequests) setItemRequests(JSON.parse(storedItemRequests));
 
     // Create default admin if none exists
     if (!storedUsers || JSON.parse(storedUsers).length === 0) {
@@ -421,12 +440,41 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     saveToStorage('givelocal_categories', updatedCategories);
   };
 
+  const submitItemRequest = (request: Omit<ItemRequest, 'id' | 'userId' | 'status' | 'createdAt'>) => {
+    if (!user) return;
+    const newRequest: ItemRequest = {
+      ...request,
+      id: `request-${Date.now()}`,
+      userId: user.id,
+      status: 'active',
+      createdAt: new Date().toISOString(),
+    };
+    const updatedRequests = [...itemRequests, newRequest];
+    setItemRequests(updatedRequests);
+    saveToStorage('givelocal_item_requests', updatedRequests);
+  };
+
+  const updateItemRequest = (requestId: string, updates: Partial<ItemRequest>) => {
+    const updatedRequests = itemRequests.map(req =>
+      req.id === requestId ? { ...req, ...updates } : req
+    );
+    setItemRequests(updatedRequests);
+    saveToStorage('givelocal_item_requests', updatedRequests);
+  };
+
+  const deleteItemRequest = (requestId: string) => {
+    const updatedRequests = itemRequests.filter(req => req.id !== requestId);
+    setItemRequests(updatedRequests);
+    saveToStorage('givelocal_item_requests', updatedRequests);
+  };
+
   return (
     <AuthContext.Provider value={{
       user,
       users,
       organizations,
       categoryProposals,
+      itemRequests,
       categories,
       login,
       signup,
@@ -447,6 +495,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       addSubcategory,
       updateSubcategory,
       deleteSubcategory,
+      submitItemRequest,
+      updateItemRequest,
+      deleteItemRequest,
     }}>
       {children}
     </AuthContext.Provider>
