@@ -12,6 +12,11 @@ export interface User {
   status: UserStatus;
   verificationDocument?: string; // base64 stored document
   verificationDocumentName?: string;
+  // Beneficiary-specific fields
+  nric?: string;
+  address?: string;
+  birthdate?: string;
+  declarationAgreed?: boolean;
   createdAt: string;
   isBanned: boolean;
 }
@@ -48,7 +53,7 @@ interface AuthContextType {
   categoryProposals: CategoryProposal[];
   categories: { name: string; subcategories: string[] }[];
   login: (email: string, password: string) => Promise<{ success: boolean; error?: string }>;
-  signup: (email: string, password: string, name: string, role: UserRole, verificationDocument?: string, verificationDocumentName?: string) => Promise<{ success: boolean; error?: string }>;
+  signup: (email: string, password: string, name: string, role: UserRole, verificationDocument?: string, verificationDocumentName?: string, beneficiaryDetails?: { nric: string; address: string; birthdate: string }) => Promise<{ success: boolean; error?: string }>;
   logout: () => void;
   resetPassword: (userId: string) => void;
   banUser: (userId: string) => void;
@@ -168,7 +173,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     name: string, 
     role: UserRole,
     verificationDocument?: string,
-    verificationDocumentName?: string
+    verificationDocumentName?: string,
+    beneficiaryDetails?: { nric: string; address: string; birthdate: string }
   ): Promise<{ success: boolean; error?: string }> => {
     if (users.find(u => u.email === email)) {
       return { success: false, error: 'Email already registered' };
@@ -186,6 +192,11 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       status: initialStatus,
       verificationDocument: role === 'beneficiary' ? verificationDocument : undefined,
       verificationDocumentName: role === 'beneficiary' ? verificationDocumentName : undefined,
+      // Beneficiary-specific fields
+      nric: role === 'beneficiary' ? beneficiaryDetails?.nric : undefined,
+      address: role === 'beneficiary' ? beneficiaryDetails?.address : undefined,
+      birthdate: role === 'beneficiary' ? beneficiaryDetails?.birthdate : undefined,
+      declarationAgreed: role === 'beneficiary' ? true : undefined,
       createdAt: new Date().toISOString(),
       isBanned: false,
     };

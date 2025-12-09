@@ -1,4 +1,4 @@
-import { ArrowLeft, FileText, Check, X, Download, User as UserIcon, Building2, HandHeart, Clock } from 'lucide-react';
+import { ArrowLeft, FileText, Check, X, Download, User as UserIcon, Building2, HandHeart, Clock, MapPin, Calendar, CreditCard } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -158,41 +158,83 @@ const AdminVerifications = () => {
             ) : (
               <div className="space-y-4">
                 {pendingBeneficiaries.map(user => (
-                  <div key={user.id} className="flex items-center justify-between p-4 border rounded-lg">
-                    <div className="flex items-center gap-4">
-                      <div className="w-10 h-10 bg-amber-100 rounded-full flex items-center justify-center">
-                        <UserIcon className="h-5 w-5 text-amber-600" />
+                  <div key={user.id} className="p-4 border rounded-lg space-y-4">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-4">
+                        <div className="w-10 h-10 bg-amber-100 rounded-full flex items-center justify-center">
+                          <UserIcon className="h-5 w-5 text-amber-600" />
+                        </div>
+                        <div>
+                          <p className="font-medium">{user.name}</p>
+                          <p className="text-sm text-muted-foreground">{user.email}</p>
+                          <p className="text-xs text-muted-foreground">
+                            Registered: {new Date(user.createdAt).toLocaleDateString()}
+                          </p>
+                        </div>
                       </div>
-                      <div>
-                        <p className="font-medium">{user.name}</p>
-                        <p className="text-sm text-muted-foreground">{user.email}</p>
-                        <p className="text-xs text-muted-foreground">
-                          Registered: {new Date(user.createdAt).toLocaleDateString()}
-                        </p>
+                      <div className="flex items-center gap-2">
+                        {user.verificationDocument && renderDocumentPreview(
+                          user.verificationDocument, 
+                          user.verificationDocumentName || 'cpf-statement'
+                        )}
+                        <Button 
+                          size="sm" 
+                          variant="outline"
+                          className="text-destructive hover:bg-destructive hover:text-destructive-foreground"
+                          onClick={() => handleRejectBeneficiary(user.id, user.name)}
+                        >
+                          <X className="h-4 w-4 mr-1" />
+                          Reject
+                        </Button>
+                        <Button 
+                          size="sm"
+                          onClick={() => handleApproveBeneficiary(user.id, user.name)}
+                        >
+                          <Check className="h-4 w-4 mr-1" />
+                          Approve
+                        </Button>
                       </div>
                     </div>
-                    <div className="flex items-center gap-2">
-                      {user.verificationDocument && renderDocumentPreview(
-                        user.verificationDocument, 
-                        user.verificationDocumentName || 'cpf-statement'
-                      )}
-                      <Button 
-                        size="sm" 
-                        variant="outline"
-                        className="text-destructive hover:bg-destructive hover:text-destructive-foreground"
-                        onClick={() => handleRejectBeneficiary(user.id, user.name)}
-                      >
-                        <X className="h-4 w-4 mr-1" />
-                        Reject
-                      </Button>
-                      <Button 
-                        size="sm"
-                        onClick={() => handleApproveBeneficiary(user.id, user.name)}
-                      >
-                        <Check className="h-4 w-4 mr-1" />
-                        Approve
-                      </Button>
+                    
+                    {/* Beneficiary Details */}
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4 p-3 bg-muted/50 rounded-lg text-sm">
+                      <div className="flex items-center gap-2">
+                        <CreditCard className="h-4 w-4 text-muted-foreground" />
+                        <div>
+                          <p className="text-xs text-muted-foreground">NRIC</p>
+                          <p className="font-medium">{user.nric || 'Not provided'}</p>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <Calendar className="h-4 w-4 text-muted-foreground" />
+                        <div>
+                          <p className="text-xs text-muted-foreground">Date of Birth</p>
+                          <p className="font-medium">
+                            {user.birthdate 
+                              ? new Date(user.birthdate).toLocaleDateString('en-SG', { 
+                                  day: 'numeric', 
+                                  month: 'long', 
+                                  year: 'numeric' 
+                                })
+                              : 'Not provided'}
+                          </p>
+                        </div>
+                      </div>
+                      <div className="flex items-start gap-2 md:col-span-1">
+                        <MapPin className="h-4 w-4 text-muted-foreground mt-0.5" />
+                        <div>
+                          <p className="text-xs text-muted-foreground">Address</p>
+                          <p className="font-medium">{user.address || 'Not provided'}</p>
+                        </div>
+                      </div>
                     </div>
+                    
+                    {user.declarationAgreed && (
+                      <div className="text-xs text-green-600 flex items-center gap-1">
+                        <Check className="h-3 w-3" />
+                        User has agreed to the declaration of truthful information
+                      </div>
+                    )}
                   </div>
                 ))}
               </div>

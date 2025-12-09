@@ -6,9 +6,11 @@ import { Label } from '@/components/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Textarea } from '@/components/ui/textarea';
 import { useAuth, UserRole } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
-import { Heart, Building2, User, HandHeart, Upload, FileText, AlertCircle } from 'lucide-react';
+import { Heart, Building2, User, HandHeart, Upload, FileText, AlertCircle, ShieldAlert } from 'lucide-react';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 
 const Auth = () => {
@@ -26,6 +28,12 @@ const Auth = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [verificationFile, setVerificationFile] = useState<File | null>(null);
   const [verificationBase64, setVerificationBase64] = useState<string>('');
+  
+  // Beneficiary-specific fields
+  const [nric, setNric] = useState('');
+  const [address, setAddress] = useState('');
+  const [birthdate, setBirthdate] = useState('');
+  const [declarationAgreed, setDeclarationAgreed] = useState(false);
 
   // Redirect if already logged in
   if (user) {
@@ -96,13 +104,53 @@ const Auth = () => {
       return;
     }
 
+    // Validate beneficiary-specific fields
+    if (signupRole === 'beneficiary') {
+      if (!nric || !address || !birthdate) {
+        toast({
+          title: 'Missing information',
+          description: 'Please fill in all required fields (NRIC, address, and birthdate).',
+          variant: 'destructive',
+        });
+        setIsLoading(false);
+        return;
+      }
+      
+      // Validate NRIC format (Singapore format: S/T/F/G followed by 7 digits and a letter)
+      const nricPattern = /^[STFG]\d{7}[A-Z]$/i;
+      if (!nricPattern.test(nric)) {
+        toast({
+          title: 'Invalid NRIC',
+          description: 'Please enter a valid Singapore NRIC (e.g., S1234567A).',
+          variant: 'destructive',
+        });
+        setIsLoading(false);
+        return;
+      }
+
+      if (!declarationAgreed) {
+        toast({
+          title: 'Declaration required',
+          description: 'You must agree to the declaration before proceeding.',
+          variant: 'destructive',
+        });
+        setIsLoading(false);
+        return;
+      }
+    }
+
+    const beneficiaryDetails = signupRole === 'beneficiary' 
+      ? { nric: nric.toUpperCase(), address, birthdate }
+      : undefined;
+
     const result = await signup(
       signupEmail, 
       signupPassword, 
       signupName, 
       signupRole,
       verificationBase64,
-      verificationFile?.name
+      verificationFile?.name,
+      beneficiaryDetails
     );
     
     if (result.success) {
@@ -119,6 +167,10 @@ const Auth = () => {
       setSignupRole('user');
       setVerificationFile(null);
       setVerificationBase64('');
+      setNric('');
+      setAddress('');
+      setBirthdate('');
+      setDeclarationAgreed(false);
     } else {
       toast({ title: 'Signup failed', description: result.error, variant: 'destructive' });
     }
@@ -237,6 +289,10 @@ const Auth = () => {
                     setSignupRole(v as UserRole);
                     setVerificationFile(null);
                     setVerificationBase64('');
+                    setNric('');
+                    setAddress('');
+                    setBirthdate('');
+                    setDeclarationAgreed(false);
                   }}>
                     <div className="flex items-center space-x-3 p-3 rounded-lg border hover:bg-accent/50 transition-colors">
                       <RadioGroupItem value="user" id="role-user" />
@@ -264,6 +320,48 @@ const Auth = () => {
                     </div>
                   </RadioGroup>
                 </div>
+
+                {/* Beneficiary-specific fields */}
+                {signupRole === 'beneficiary' && (
+                  <div className="space-y-4 border-t pt-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="nric">NRIC (IC Number) *</Label>
+                      <Input
+                        id="nric"
+                        type="text"
+                        placeholder="e.g., S1234567A"
+                        value={nric}
+                        onChange={(e) => setNric(e.target.value.toUpperCase())}
+                        maxLength={9}
+                        required
+                      />
+                      <p className="text-xs text-muted-foreground">Your Singapore NRIC number</p>
+                    </div>
+                    
+                    <div className="space-y-2">
+                      <Label htmlFor="birthdate">Date of Birth *</Label>
+                      <Input
+                        id="birthdate"
+                        type="date"
+                        value={birthdate}
+                        onChange={(e) => setBirthdate(e.target.value)}
+                        required
+                      />
+                    </div>
+                    
+                    <div className="space-y-2">
+                      <Label htmlFor="address">House Address *</Label>
+                      <Textarea
+                        id="address"
+                        placeholder="Enter your full residential address"
+                        value={address}
+                        onChange={(e) => setAddress(e.target.value)}
+                        rows={2}
+                        required
+                      />
+                    </div>
+                  </div>
+                )}
 
                 {/* Document Upload for Beneficiary and Organization */}
                 {(signupRole === 'beneficiary' || signupRole === 'organization') && (
@@ -295,6 +393,29 @@ const Auth = () => {
                         </div>
                       )}
                     </div>
+
+                    {/* Declaration for Beneficiary */}
+                    {signupRole === 'beneficiary' && (
+                      <div className="space-y-3 mt-4">
+                        <Alert className="bg-red-50 border-red-200">
+                          <ShieldAlert className="h-4 w-4 text-red-600" />
+                          <AlertDescription className="text-red-800 text-xs">
+                            <strong>Important Declaration:</strong> By checking the box below, you declare that all information provided is true and accurate. Providing false information is a serious offence and may be reported to the Singapore Police Force.
+                          </AlertDescription>
+                        </Alert>
+                        
+                        <div className="flex items-start space-x-3 p-3 rounded-lg border border-red-200 bg-red-50/50">
+                          <Checkbox
+                            id="declaration"
+                            checked={declarationAgreed}
+                            onCheckedChange={(checked) => setDeclarationAgreed(checked === true)}
+                          />
+                          <Label htmlFor="declaration" className="text-sm leading-relaxed cursor-pointer">
+                            I declare that all information provided (NRIC, address, birthdate, and CPF statement) is true, accurate, and complete. I understand that providing false information may result in my account being reported to the authorities.
+                          </Label>
+                        </div>
+                      </div>
+                    )}
 
                     <Alert className="bg-amber-50 border-amber-200">
                       <AlertCircle className="h-4 w-4 text-amber-600" />
