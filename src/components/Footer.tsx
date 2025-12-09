@@ -15,7 +15,7 @@ const Footer = () => {
               <span className="text-xl font-bold">GiveLocal</span>
             </Link>
             <p className="text-muted mb-6">
-              Connecting communities through the power of giving. One item at a time.
+              Connecting Singaporeans through the power of giving. One item at a time.
             </p>
             <div className="flex gap-4">
               <a href="#" className="w-10 h-10 rounded-full bg-background/10 flex items-center justify-center hover:bg-background/20 transition-colors">

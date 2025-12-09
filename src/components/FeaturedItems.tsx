@@ -8,24 +8,24 @@ const sampleItems: DonationItem[] = [
   {
     id: "1",
     title: "Vintage Wooden Bookshelf",
-    description: "Beautiful oak bookshelf in great condition. Has 5 shelves and can hold many books. Minor scratches on the back.",
+    description: "Beautiful teak bookshelf in great condition. Has 5 shelves and can hold many books. Minor scratches on the back.",
     image: "https://images.unsplash.com/photo-1594620302200-9a762244a156?w=600&h=450&fit=crop",
     category: "Furniture",
     durability: "Used 2 years",
-    location: "Downtown",
-    distance: "0.5 mi",
+    location: "Toa Payoh",
+    distance: "1.2 km",
     postedAt: "2h ago",
     views: 45,
   },
   {
     id: "2",
     title: "Kids' Winter Clothing Bundle",
-    description: "Collection of winter jackets, sweaters, and pants for kids aged 5-7. All in good condition, some barely worn.",
+    description: "Collection of jackets, sweaters, and pants for kids aged 5-7. All in good condition, some barely worn.",
     image: "https://images.unsplash.com/photo-1622290291468-a28f7a7dc6a8?w=600&h=450&fit=crop",
     category: "Clothing",
     durability: "Gently used",
-    location: "Westside",
-    distance: "1.2 mi",
+    location: "Tampines",
+    distance: "3.5 km",
     postedAt: "5h ago",
     views: 89,
   },
@@ -36,8 +36,8 @@ const sampleItems: DonationItem[] = [
     image: "https://images.unsplash.com/photo-1593359677879-a4bb92f829d1?w=600&h=450&fit=crop",
     category: "Electronics",
     durability: "Used 3 years",
-    location: "East Village",
-    distance: "2.0 mi",
+    location: "Jurong East",
+    distance: "5.0 km",
     postedAt: "1d ago",
     views: 234,
   },
@@ -48,8 +48,8 @@ const sampleItems: DonationItem[] = [
     image: "https://images.unsplash.com/photo-1510915361894-db8b60106cb1?w=600&h=450&fit=crop",
     category: "Music",
     durability: "Used 1 year",
-    location: "Midtown",
-    distance: "0.8 mi",
+    location: "Bishan",
+    distance: "2.1 km",
     postedAt: "3h ago",
     views: 67,
   },
@@ -60,8 +60,8 @@ const sampleItems: DonationItem[] = [
     image: "https://images.unsplash.com/photo-1512820790803-83ca734da794?w=600&h=450&fit=crop",
     category: "Books",
     durability: "Good condition",
-    location: "Northside",
-    distance: "1.5 mi",
+    location: "Ang Mo Kio",
+    distance: "2.8 km",
     postedAt: "6h ago",
     views: 112,
   },
@@ -72,8 +72,8 @@ const sampleItems: DonationItem[] = [
     image: "https://images.unsplash.com/photo-1518455027359-f3f8164ba6bd?w=600&h=450&fit=crop",
     category: "Furniture",
     durability: "Used 4 years",
-    location: "Business District",
-    distance: "3.0 mi",
+    location: "Raffles Place",
+    distance: "4.2 km",
     postedAt: "12h ago",
     views: 78,
   },
@@ -100,7 +100,7 @@ const FeaturedItems = () => {
             Available Near You
           </h2>
           <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-            Discover items your neighbors are giving away. Find something you need or be inspired to donate!
+            Discover items Singaporeans are giving away. Find something you need or be inspired to donate!
           </p>
         </div>
 
