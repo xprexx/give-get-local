@@ -51,6 +51,12 @@ interface AuthContextType {
   reviewCategoryProposal: (proposalId: string, status: 'approved' | 'rejected') => void;
   approveOrganization: (orgId: string) => void;
   rejectOrganization: (orgId: string) => void;
+  addCategory: (name: string) => void;
+  updateCategory: (oldName: string, newName: string) => void;
+  deleteCategory: (name: string) => void;
+  addSubcategory: (categoryName: string, subcategory: string) => void;
+  updateSubcategory: (categoryName: string, oldSubcategory: string, newSubcategory: string) => void;
+  deleteSubcategory: (categoryName: string, subcategory: string) => void;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -268,6 +274,57 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     saveToStorage('givelocal_organizations', updatedOrgs);
   };
 
+  const addCategory = (name: string) => {
+    if (categories.find(c => c.name === name)) return;
+    const updatedCategories = [...categories, { name, subcategories: [] }];
+    setCategories(updatedCategories);
+    saveToStorage('givelocal_categories', updatedCategories);
+  };
+
+  const updateCategory = (oldName: string, newName: string) => {
+    const updatedCategories = categories.map(c =>
+      c.name === oldName ? { ...c, name: newName } : c
+    );
+    setCategories(updatedCategories);
+    saveToStorage('givelocal_categories', updatedCategories);
+  };
+
+  const deleteCategory = (name: string) => {
+    const updatedCategories = categories.filter(c => c.name !== name);
+    setCategories(updatedCategories);
+    saveToStorage('givelocal_categories', updatedCategories);
+  };
+
+  const addSubcategory = (categoryName: string, subcategory: string) => {
+    const updatedCategories = categories.map(c =>
+      c.name === categoryName && !c.subcategories.includes(subcategory)
+        ? { ...c, subcategories: [...c.subcategories, subcategory] }
+        : c
+    );
+    setCategories(updatedCategories);
+    saveToStorage('givelocal_categories', updatedCategories);
+  };
+
+  const updateSubcategory = (categoryName: string, oldSubcategory: string, newSubcategory: string) => {
+    const updatedCategories = categories.map(c =>
+      c.name === categoryName
+        ? { ...c, subcategories: c.subcategories.map(s => s === oldSubcategory ? newSubcategory : s) }
+        : c
+    );
+    setCategories(updatedCategories);
+    saveToStorage('givelocal_categories', updatedCategories);
+  };
+
+  const deleteSubcategory = (categoryName: string, subcategory: string) => {
+    const updatedCategories = categories.map(c =>
+      c.name === categoryName
+        ? { ...c, subcategories: c.subcategories.filter(s => s !== subcategory) }
+        : c
+    );
+    setCategories(updatedCategories);
+    saveToStorage('givelocal_categories', updatedCategories);
+  };
+
   return (
     <AuthContext.Provider value={{
       user,
@@ -286,6 +343,12 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       reviewCategoryProposal,
       approveOrganization,
       rejectOrganization,
+      addCategory,
+      updateCategory,
+      deleteCategory,
+      addSubcategory,
+      updateSubcategory,
+      deleteSubcategory,
     }}>
       {children}
     </AuthContext.Provider>
