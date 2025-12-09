@@ -29,6 +29,7 @@ import OrganizationVolunteerEvents from "./pages/organization/VolunteerEvents";
 import OrganizationVolunteerApprovals from "./pages/organization/VolunteerApprovals";
 import BeneficiaryItemRequests from "./pages/beneficiary/ItemRequests";
 import DonorPickupRequests from "./pages/donor/PickupRequests";
+import Account from "./pages/Account";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -127,6 +128,13 @@ const App = () => (
             <Route path="/donor/pickup-requests" element={
               <ProtectedRoute allowedRoles={['user', 'beneficiary', 'organization', 'admin']}>
                 <DonorPickupRequests />
+              </ProtectedRoute>
+            } />
+
+            {/* User Account */}
+            <Route path="/account" element={
+              <ProtectedRoute allowedRoles={['user', 'beneficiary', 'organization', 'admin']}>
+                <Account />
               </ProtectedRoute>
             } />
 
