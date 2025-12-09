@@ -11,6 +11,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
+import { useNotifications } from "@/contexts/NotificationContext";
 import { Heart, MapPin, Calendar, Clock, Users, Building2, CheckCircle, Hourglass } from "lucide-react";
 import { format } from "date-fns";
 
@@ -46,6 +47,7 @@ interface VolunteerRegistration {
 const VolunteerEvents = () => {
   const { organizations, user } = useAuth();
   const { toast } = useToast();
+  const { addNotification } = useNotifications();
 
   const [events, setEvents] = useState<VolunteerEvent[]>([
     {
@@ -204,6 +206,14 @@ const VolunteerEvents = () => {
     };
 
     setRegistrations(prev => [...prev, newRegistration]);
+
+    // Add notification
+    addNotification({
+      type: 'volunteer',
+      title: 'Volunteer Application Submitted',
+      message: `Your application for "${selectedEvent?.title}" has been submitted and is pending approval from ${selectedEvent?.organizationName}.`,
+      link: '/volunteer',
+    });
 
     setIsSubmitting(false);
     setSignupSuccess(true);

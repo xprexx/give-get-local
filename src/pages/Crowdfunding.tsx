@@ -11,6 +11,7 @@ import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
+import { useNotifications } from "@/contexts/NotificationContext";
 import { Heart, DollarSign, Users, Calendar, Building2, Target, Clock, CreditCard, CheckCircle } from "lucide-react";
 import { format, differenceInDays } from "date-fns";
 
@@ -32,6 +33,7 @@ interface Campaign {
 const Crowdfunding = () => {
   const { organizations } = useAuth();
   const { toast } = useToast();
+  const { addNotification } = useNotifications();
   
   const [campaigns, setCampaigns] = useState<Campaign[]>([
     {
@@ -172,6 +174,14 @@ const Crowdfunding = () => {
       }
       return c;
     }));
+
+    // Add notification
+    addNotification({
+      type: 'crowdfunding',
+      title: 'Donation Successful',
+      message: `You donated ${formatCurrency(amount)} to "${selectedCampaign?.title}". Thank you for your generosity!`,
+      link: '/crowdfunding',
+    });
 
     setIsProcessing(false);
     setPaymentSuccess(true);

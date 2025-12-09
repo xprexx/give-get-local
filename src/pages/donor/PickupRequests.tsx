@@ -10,6 +10,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
+import { useNotifications } from "@/contexts/NotificationContext";
 import { 
   Heart, ArrowLeft, MapPin, Calendar, Clock, MessageSquare, 
   CheckCircle, XCircle, Send, User, Package 
@@ -117,6 +118,7 @@ const mockRequests: PickupRequest[] = [
 const DonorPickupRequests = () => {
   const { user } = useAuth();
   const { toast } = useToast();
+  const { addNotification } = useNotifications();
   const [requests, setRequests] = useState<PickupRequest[]>(mockRequests);
   const [selectedRequest, setSelectedRequest] = useState<PickupRequest | null>(null);
   const [newMessage, setNewMessage] = useState("");
@@ -126,12 +128,19 @@ const DonorPickupRequests = () => {
   const completedRequests = requests.filter(r => r.status === "completed" || r.status === "rejected");
 
   const handleAcceptRequest = (requestId: string) => {
+    const request = requests.find(r => r.id === requestId);
     setRequests(prev => prev.map(r => 
       r.id === requestId ? { ...r, status: "accepted" as const } : r
     ));
     if (selectedRequest?.id === requestId) {
       setSelectedRequest(prev => prev ? { ...prev, status: "accepted" } : null);
     }
+    addNotification({
+      type: 'pickup',
+      title: 'Pickup Request Accepted',
+      message: `You accepted ${request?.requesterName}'s pickup request for "${request?.itemTitle}".`,
+      link: '/donor/pickup-requests',
+    });
     toast({
       title: "Request Accepted",
       description: "You can now chat with the requester to coordinate pickup.",

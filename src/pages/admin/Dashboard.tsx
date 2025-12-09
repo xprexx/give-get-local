@@ -111,9 +111,9 @@ const AdminDashboard = () => {
 
         {/* Quick Actions */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-          <Link to="/admin/verifications">
-            <Card className="hover:shadow-lg transition-shadow cursor-pointer h-full border-amber-200 bg-amber-50/50">
-              <CardHeader>
+          <Link to="/admin/verifications" className="h-full">
+            <Card className="hover:shadow-lg transition-shadow cursor-pointer h-full border-amber-200 bg-amber-50/50 flex flex-col">
+              <CardHeader className="flex-1">
                 <CardTitle className="flex items-center gap-2">
                   <ShieldCheck className="h-5 w-5 text-amber-600" />
                   Verifications
@@ -127,15 +127,15 @@ const AdminDashboard = () => {
                   Review beneficiary and organization documents
                 </CardDescription>
               </CardHeader>
-              <CardContent>
+              <CardContent className="mt-auto">
                 <Button className="w-full bg-amber-600 hover:bg-amber-700">Review Verifications</Button>
               </CardContent>
             </Card>
           </Link>
 
-          <Link to="/admin/users">
-            <Card className="hover:shadow-lg transition-shadow cursor-pointer h-full">
-              <CardHeader>
+          <Link to="/admin/users" className="h-full">
+            <Card className="hover:shadow-lg transition-shadow cursor-pointer h-full flex flex-col">
+              <CardHeader className="flex-1">
                 <CardTitle className="flex items-center gap-2">
                   <Users className="h-5 w-5 text-primary" />
                   User Management
@@ -144,34 +144,34 @@ const AdminDashboard = () => {
                   View, reset passwords, and manage user accounts
                 </CardDescription>
               </CardHeader>
-              <CardContent>
+              <CardContent className="mt-auto">
                 <Button className="w-full">Manage Users</Button>
               </CardContent>
             </Card>
           </Link>
 
-          <Link to="/admin/organizations">
-            <Card className="hover:shadow-lg transition-shadow cursor-pointer h-full">
-              <CardHeader>
+          <Link to="/admin/organizations" className="h-full">
+            <Card className="hover:shadow-lg transition-shadow cursor-pointer h-full flex flex-col">
+              <CardHeader className="flex-1">
                 <CardTitle className="flex items-center gap-2">
-                  <Building2 className="h-5 w-5 text-secondary" />
+                  <Building2 className="h-5 w-5 text-primary" />
                   Organizations
                 </CardTitle>
                 <CardDescription>
                   View all registered organizations
                 </CardDescription>
               </CardHeader>
-              <CardContent>
-                <Button className="w-full" variant="secondary">View Organizations</Button>
+              <CardContent className="mt-auto">
+                <Button className="w-full">View Organizations</Button>
               </CardContent>
             </Card>
           </Link>
 
-          <Link to="/admin/categories">
-            <Card className="hover:shadow-lg transition-shadow cursor-pointer h-full">
-              <CardHeader>
+          <Link to="/admin/categories" className="h-full">
+            <Card className="hover:shadow-lg transition-shadow cursor-pointer h-full flex flex-col">
+              <CardHeader className="flex-1">
                 <CardTitle className="flex items-center gap-2">
-                  <Tags className="h-5 w-5 text-accent-foreground" />
+                  <Tags className="h-5 w-5 text-primary" />
                   Categories
                   {stats.pendingProposals > 0 && (
                     <span className="bg-amber-500 text-white text-xs px-2 py-0.5 rounded-full">
@@ -183,15 +183,15 @@ const AdminDashboard = () => {
                   Review category proposals from organizations
                 </CardDescription>
               </CardHeader>
-              <CardContent>
-                <Button className="w-full" variant="outline">Review Proposals</Button>
+              <CardContent className="mt-auto">
+                <Button className="w-full">Review Proposals</Button>
               </CardContent>
             </Card>
           </Link>
 
-          <Link to="/admin/item-requests">
-            <Card className="hover:shadow-lg transition-shadow cursor-pointer h-full border-orange-200 bg-orange-50/50">
-              <CardHeader>
+          <Link to="/admin/item-requests" className="h-full">
+            <Card className="hover:shadow-lg transition-shadow cursor-pointer h-full border-orange-200 bg-orange-50/50 flex flex-col">
+              <CardHeader className="flex-1">
                 <CardTitle className="flex items-center gap-2">
                   <ClipboardList className="h-5 w-5 text-orange-600" />
                   Item Requests
@@ -205,7 +205,7 @@ const AdminDashboard = () => {
                   Moderate beneficiary item requests
                 </CardDescription>
               </CardHeader>
-              <CardContent>
+              <CardContent className="mt-auto">
                 <Button className="w-full bg-orange-600 hover:bg-orange-700">Moderate Requests</Button>
               </CardContent>
             </Card>
