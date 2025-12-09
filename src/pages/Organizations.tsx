@@ -23,79 +23,79 @@ interface Organization {
 const organizations: Organization[] = [
   {
     id: "1",
-    name: "Hope Community Center",
-    description: "Supporting families in need with essential items for daily living. We distribute to over 500 families monthly.",
+    name: "The Salvation Army Singapore",
+    description: "Serving the needy and marginalized in Singapore since 1935. We accept quality used goods for our Family Stores.",
     logo: "https://images.unsplash.com/photo-1559027615-cd4628902d4a?w=120&h=120&fit=crop",
-    location: "Downtown",
-    type: "Community Center",
-    accepting: ["Clothing", "Kitchen items", "Bedding", "Toys"],
-    notAccepting: ["Electronics", "Large furniture"],
-    itemsNeeded: 156,
+    location: "Multiple Locations",
+    type: "Charity",
+    accepting: ["Clothing", "Household items", "Books", "Toys", "Small appliances"],
+    notAccepting: ["Mattresses", "Large furniture", "Expired items"],
+    itemsNeeded: 320,
     verified: true,
   },
   {
     id: "2",
-    name: "Second Chance Shelter",
-    description: "Providing resources and support for individuals transitioning out of homelessness.",
+    name: "Willing Hearts",
+    description: "A secular, non-affiliated charity that operates a soup kitchen to prepare and distribute meals to the underprivileged.",
     logo: "https://images.unsplash.com/photo-1532629345422-7515f3d16bb6?w=120&h=120&fit=crop",
-    location: "Eastside",
-    type: "Shelter",
-    accepting: ["Clothing", "Hygiene products", "Blankets", "Books"],
-    notAccepting: ["Textbooks", "Large furniture"],
-    itemsNeeded: 89,
+    location: "Chai Chee",
+    type: "Soup Kitchen",
+    accepting: ["Non-perishable food", "Kitchen equipment", "Cleaning supplies"],
+    notAccepting: ["Clothing", "Electronics", "Furniture"],
+    itemsNeeded: 156,
     verified: true,
   },
   {
     id: "3",
-    name: "Kids First Foundation",
-    description: "Ensuring every child has access to educational materials and basic necessities.",
+    name: "Blessings in a Bag",
+    description: "Empowering underprivileged children with school supplies and enrichment programs across Singapore.",
     logo: "https://images.unsplash.com/photo-1488521787991-ed7bbaae773c?w=120&h=120&fit=crop",
-    location: "Westside",
-    type: "Non-Profit",
-    accepting: ["Kids clothing", "Toys", "School supplies", "Books"],
-    notAccepting: ["Adult clothing", "Electronics"],
+    location: "Islandwide",
+    type: "Youth Charity",
+    accepting: ["School supplies", "Stationery", "Books", "Backpacks"],
+    notAccepting: ["Adult items", "Electronics", "Used textbooks"],
     itemsNeeded: 234,
     verified: true,
   },
   {
     id: "4",
-    name: "Green Earth Recycling",
-    description: "Electronics recycling and refurbishment program. We repair and donate working electronics to schools.",
+    name: "New2U Thrift Shop (SCWO)",
+    description: "Singapore Council of Women's Organisations thrift shop. Proceeds support women and family programmes.",
     logo: "https://images.unsplash.com/photo-1532996122724-e3c354a0b15b?w=120&h=120&fit=crop",
-    location: "Industrial District",
-    type: "Recycling Center",
-    accepting: ["Electronics", "Computers", "Phones", "Tablets"],
-    notAccepting: ["Clothing", "Food", "Furniture"],
-    itemsNeeded: 78,
+    location: "Waterloo Street",
+    type: "Thrift Shop",
+    accepting: ["Clothing", "Accessories", "Bags", "Shoes", "Jewellery"],
+    notAccepting: ["Electronics", "Furniture", "Books"],
+    itemsNeeded: 189,
     verified: true,
   },
   {
     id: "5",
-    name: "Senior Care Alliance",
-    description: "Supporting elderly community members with essential items and household goods.",
+    name: "MINDS",
+    description: "Movement for the Intellectually Disabled of Singapore. Operating training and development centres.",
     logo: "https://images.unsplash.com/photo-1576765608535-5f04d1e3f289?w=120&h=120&fit=crop",
-    location: "Riverside",
-    type: "Senior Services",
-    accepting: ["Furniture", "Kitchen items", "Medical equipment", "Books"],
-    notAccepting: ["Kids items", "Sports equipment"],
+    location: "Various Locations",
+    type: "Social Service",
+    accepting: ["Art supplies", "Sports equipment", "Books", "Board games"],
+    notAccepting: ["Clothing", "Food items", "Electronics"],
     itemsNeeded: 112,
     verified: true,
   },
   {
     id: "6",
-    name: "Pet Rescue Network",
-    description: "Rescuing and rehoming pets in need. We accept pet supplies for our foster network.",
+    name: "SPCA Singapore",
+    description: "Society for the Prevention of Cruelty to Animals. Caring for and rehoming animals in need.",
     logo: "https://images.unsplash.com/photo-1601758228041-f3b2795255f1?w=120&h=120&fit=crop",
-    location: "Northside",
-    type: "Animal Rescue",
-    accepting: ["Pet food", "Pet beds", "Carriers", "Toys"],
+    location: "Mount Vernon",
+    type: "Animal Welfare",
+    accepting: ["Pet food", "Pet beds", "Carriers", "Towels", "Blankets"],
     notAccepting: ["Human clothing", "Electronics", "Furniture"],
-    itemsNeeded: 67,
-    verified: false,
+    itemsNeeded: 78,
+    verified: true,
   },
 ];
 
-const orgTypes = ["All", "Community Center", "Shelter", "Non-Profit", "Recycling Center", "Senior Services", "Animal Rescue"];
+const orgTypes = ["All", "Charity", "Soup Kitchen", "Youth Charity", "Thrift Shop", "Social Service", "Animal Welfare"];
 
 const Organizations = () => {
   const [selectedType, setSelectedType] = useState("All");
@@ -118,13 +118,13 @@ const Organizations = () => {
           <div className="mb-8">
             <div className="flex items-center gap-2 mb-3">
               <Building2 className="w-5 h-5 text-primary" />
-              <span className="text-sm font-medium text-primary uppercase tracking-wide">Partner Organizations</span>
+              <span className="text-sm font-medium text-primary uppercase tracking-wide">Singapore Charities</span>
             </div>
             <h1 className="text-3xl md:text-4xl font-bold text-foreground mb-4">
-              Donate to Organizations
+              Donate to Local Organizations
             </h1>
             <p className="text-lg text-muted-foreground max-w-2xl">
-              Connect with verified charities and non-profits. Perfect for bulk donations or specific item requests.
+              Connect with verified Singapore charities and non-profits. Perfect for bulk donations or specific item requests.
             </p>
           </div>
 
@@ -142,7 +142,7 @@ const Organizations = () => {
             <div className="relative flex-1 md:max-w-xs">
               <MapPin className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
               <Input
-                placeholder="Location..."
+                placeholder="Area or MRT..."
                 className="pl-12"
               />
             </div>

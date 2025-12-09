@@ -19,7 +19,7 @@ const Hero = () => {
         <div className="max-w-2xl">
           <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary/10 text-primary text-sm font-medium mb-6 animate-fade-up">
             <span className="w-2 h-2 rounded-full bg-primary animate-pulse" />
-            Join 10,000+ neighbors sharing locally
+            Join 5,000+ Singaporeans sharing locally
           </div>
           
           <h1 className="text-4xl md:text-6xl font-bold text-foreground leading-tight mb-6 animate-fade-up" style={{ animationDelay: "0.1s" }}>
@@ -28,7 +28,7 @@ const Hero = () => {
           </h1>
           
           <p className="text-lg md:text-xl text-muted-foreground mb-8 animate-fade-up" style={{ animationDelay: "0.2s" }}>
-            Connect with your community to donate items, support local charities, and reduce waste. One person's unused becomes another's treasure.
+            Connect with your Singapore community to donate items, support local charities, and reduce waste. One person's unused becomes another's treasure.
           </p>
 
           <div className="flex flex-col sm:flex-row gap-4 mb-12 animate-fade-up" style={{ animationDelay: "0.3s" }}>
@@ -45,23 +45,23 @@ const Hero = () => {
             <div className="text-center sm:text-left">
               <div className="flex items-center justify-center sm:justify-start gap-2 mb-1">
                 <Package className="w-5 h-5 text-primary" />
-                <span className="text-2xl font-bold text-foreground">50K+</span>
+                <span className="text-2xl font-bold text-foreground">25K+</span>
               </div>
               <p className="text-sm text-muted-foreground">Items Donated</p>
             </div>
             <div className="text-center sm:text-left">
               <div className="flex items-center justify-center sm:justify-start gap-2 mb-1">
                 <Users className="w-5 h-5 text-secondary" />
-                <span className="text-2xl font-bold text-foreground">200+</span>
+                <span className="text-2xl font-bold text-foreground">50+</span>
               </div>
               <p className="text-sm text-muted-foreground">Organizations</p>
             </div>
             <div className="text-center sm:text-left">
               <div className="flex items-center justify-center sm:justify-start gap-2 mb-1">
                 <MapPin className="w-5 h-5 text-primary" />
-                <span className="text-2xl font-bold text-foreground">150+</span>
+                <span className="text-2xl font-bold text-foreground">26</span>
               </div>
-              <p className="text-sm text-muted-foreground">Cities</p>
+              <p className="text-sm text-muted-foreground">Districts</p>
             </div>
           </div>
         </div>

@@ -17,32 +17,32 @@ interface Organization {
 const organizations: Organization[] = [
   {
     id: "1",
-    name: "Hope Community Center",
-    description: "Supporting families in need with essential items for daily living.",
+    name: "The Salvation Army Singapore",
+    description: "Serving the needy and marginalized in Singapore since 1935. We accept quality used goods for our Family Stores.",
     logo: "https://images.unsplash.com/photo-1559027615-cd4628902d4a?w=120&h=120&fit=crop",
-    location: "Downtown",
-    accepting: ["Clothing", "Kitchen items", "Bedding", "Toys"],
-    notAccepting: ["Electronics", "Furniture"],
-    itemsNeeded: 156,
+    location: "Multiple Locations",
+    accepting: ["Clothing", "Household items", "Books", "Toys", "Small appliances"],
+    notAccepting: ["Mattresses", "Large furniture", "Expired items"],
+    itemsNeeded: 320,
   },
   {
     id: "2",
-    name: "Second Chance Shelter",
-    description: "Providing resources and support for individuals transitioning out of homelessness.",
+    name: "Willing Hearts",
+    description: "A secular, non-affiliated charity that operates a soup kitchen to prepare and distribute meals to the underprivileged.",
     logo: "https://images.unsplash.com/photo-1532629345422-7515f3d16bb6?w=120&h=120&fit=crop",
-    location: "Eastside",
-    accepting: ["Clothing", "Hygiene products", "Blankets", "Books"],
-    notAccepting: ["Textbooks", "Large furniture"],
-    itemsNeeded: 89,
+    location: "Chai Chee",
+    accepting: ["Non-perishable food", "Kitchen equipment", "Cleaning supplies"],
+    notAccepting: ["Clothing", "Electronics", "Furniture"],
+    itemsNeeded: 156,
   },
   {
     id: "3",
-    name: "Kids First Foundation",
-    description: "Ensuring every child has access to educational materials and basic necessities.",
+    name: "Blessings in a Bag",
+    description: "Empowering underprivileged children with school supplies and enrichment programs across Singapore.",
     logo: "https://images.unsplash.com/photo-1488521787991-ed7bbaae773c?w=120&h=120&fit=crop",
-    location: "Westside",
-    accepting: ["Kids clothing", "Toys", "School supplies", "Books"],
-    notAccepting: ["Adult clothing", "Electronics"],
+    location: "Islandwide",
+    accepting: ["School supplies", "Stationery", "Books", "Backpacks"],
+    notAccepting: ["Adult items", "Electronics", "Used textbooks"],
     itemsNeeded: 234,
   },
 ];
@@ -58,10 +58,10 @@ const OrganizationsSection = () => {
               <span className="text-sm font-medium text-primary uppercase tracking-wide">Partner Organizations</span>
             </div>
             <h2 className="text-3xl md:text-4xl font-bold text-foreground mb-4">
-              Bulk Donate to Charities
+              Bulk Donate to Singapore Charities
             </h2>
             <p className="text-lg text-muted-foreground max-w-2xl">
-              Have many items to donate? Connect directly with organizations that need them most.
+              Have many items to donate? Connect directly with local organizations that need them most.
             </p>
           </div>
           <Button variant="outline">View All Organizations</Button>
