@@ -1,13 +1,14 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Search, MapPin, CheckCircle2, XCircle, Package, Building2 } from "lucide-react";
+import { Search, MapPin, CheckCircle2, XCircle, Package, Building2, Clock } from "lucide-react";
+import { useAuth } from "@/contexts/AuthContext";
 
-interface Organization {
+interface DisplayOrganization {
   id: string;
   name: string;
   description: string;
@@ -20,9 +21,10 @@ interface Organization {
   verified: boolean;
 }
 
-const organizations: Organization[] = [
+// Seed organizations - verified Singapore charities
+const seedOrganizations: DisplayOrganization[] = [
   {
-    id: "1",
+    id: "seed-1",
     name: "The Salvation Army Singapore",
     description: "Serving the needy and marginalized in Singapore since 1935. We accept quality used goods for our Family Stores.",
     logo: "https://images.unsplash.com/photo-1559027615-cd4628902d4a?w=120&h=120&fit=crop",
@@ -34,7 +36,7 @@ const organizations: Organization[] = [
     verified: true,
   },
   {
-    id: "2",
+    id: "seed-2",
     name: "Willing Hearts",
     description: "A secular, non-affiliated charity that operates a soup kitchen to prepare and distribute meals to the underprivileged.",
     logo: "https://images.unsplash.com/photo-1532629345422-7515f3d16bb6?w=120&h=120&fit=crop",
@@ -46,7 +48,7 @@ const organizations: Organization[] = [
     verified: true,
   },
   {
-    id: "3",
+    id: "seed-3",
     name: "Blessings in a Bag",
     description: "Empowering underprivileged children with school supplies and enrichment programs across Singapore.",
     logo: "https://images.unsplash.com/photo-1488521787991-ed7bbaae773c?w=120&h=120&fit=crop",
@@ -58,7 +60,7 @@ const organizations: Organization[] = [
     verified: true,
   },
   {
-    id: "4",
+    id: "seed-4",
     name: "New2U Thrift Shop (SCWO)",
     description: "Singapore Council of Women's Organisations thrift shop. Proceeds support women and family programmes.",
     logo: "https://images.unsplash.com/photo-1532996122724-e3c354a0b15b?w=120&h=120&fit=crop",
@@ -70,7 +72,7 @@ const organizations: Organization[] = [
     verified: true,
   },
   {
-    id: "5",
+    id: "seed-5",
     name: "MINDS",
     description: "Movement for the Intellectually Disabled of Singapore. Operating training and development centres.",
     logo: "https://images.unsplash.com/photo-1576765608535-5f04d1e3f289?w=120&h=120&fit=crop",
@@ -82,7 +84,7 @@ const organizations: Organization[] = [
     verified: true,
   },
   {
-    id: "6",
+    id: "seed-6",
     name: "SPCA Singapore",
     description: "Society for the Prevention of Cruelty to Animals. Caring for and rehoming animals in need.",
     logo: "https://images.unsplash.com/photo-1601758228041-f3b2795255f1?w=120&h=120&fit=crop",
@@ -95,13 +97,52 @@ const organizations: Organization[] = [
   },
 ];
 
-const orgTypes = ["All", "Charity", "Soup Kitchen", "Youth Charity", "Thrift Shop", "Social Service", "Animal Welfare"];
-
 const Organizations = () => {
+  const { organizations: authOrganizations, categories } = useAuth();
   const [selectedType, setSelectedType] = useState("All");
   const [searchQuery, setSearchQuery] = useState("");
 
-  const filteredOrgs = organizations.filter((org) => {
+  // Transform approved AuthContext organizations to display format
+  const registeredOrganizations = useMemo((): DisplayOrganization[] => {
+    return authOrganizations
+      .filter((org) => org.status === "approved")
+      .map((org) => {
+        // Categories are stored by name directly
+        const acceptingNames = org.acceptedCategories.filter(
+          (catName) => categories.some((c) => c.name === catName)
+        );
+
+        const notAcceptingNames = org.rejectedCategories.filter(
+          (catName) => categories.some((c) => c.name === catName)
+        );
+
+        return {
+          id: org.id,
+          name: org.name,
+          description: org.description || "A registered organization on GiveLocal.",
+          logo: "https://images.unsplash.com/photo-1560179707-f14e90ef3623?w=120&h=120&fit=crop",
+          location: "Singapore",
+          type: "Community",
+          accepting: acceptingNames.length > 0 ? acceptingNames : ["Setting up categories..."],
+          notAccepting: notAcceptingNames,
+          itemsNeeded: Math.floor(Math.random() * 100) + 20,
+          verified: false,
+        };
+      });
+  }, [authOrganizations, categories]);
+
+  // Combine seed and registered organizations
+  const allOrganizations = useMemo(() => {
+    return [...seedOrganizations, ...registeredOrganizations];
+  }, [registeredOrganizations]);
+
+  // Get unique org types for filter pills
+  const orgTypes = useMemo(() => {
+    const types = new Set(allOrganizations.map((org) => org.type));
+    return ["All", ...Array.from(types)];
+  }, [allOrganizations]);
+
+  const filteredOrgs = allOrganizations.filter((org) => {
     const matchesType = selectedType === "All" || org.type === selectedType;
     const matchesSearch = org.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
                          org.description.toLowerCase().includes(searchQuery.toLowerCase());
@@ -190,8 +231,10 @@ const Organizations = () => {
                         <h3 className="font-semibold text-lg text-foreground">
                           {org.name}
                         </h3>
-                        {org.verified && (
+                        {org.verified ? (
                           <CheckCircle2 className="w-4 h-4 text-primary" />
+                        ) : (
+                          <Clock className="w-4 h-4 text-muted-foreground" />
                         )}
                       </div>
                       <div className="flex items-center gap-2 text-sm text-muted-foreground">
@@ -222,19 +265,21 @@ const Organizations = () => {
                       </div>
                     </div>
 
-                    <div>
-                      <div className="flex items-center gap-2 text-sm font-medium text-foreground mb-2">
-                        <XCircle className="w-4 h-4 text-destructive" />
-                        Not Accepting
+                    {org.notAccepting.length > 0 && (
+                      <div>
+                        <div className="flex items-center gap-2 text-sm font-medium text-foreground mb-2">
+                          <XCircle className="w-4 h-4 text-destructive" />
+                          Not Accepting
+                        </div>
+                        <div className="flex flex-wrap gap-1">
+                          {org.notAccepting.map((item) => (
+                            <Badge key={item} variant="outline" className="text-xs">
+                              {item}
+                            </Badge>
+                          ))}
+                        </div>
                       </div>
-                      <div className="flex flex-wrap gap-1">
-                        {org.notAccepting.map((item) => (
-                          <Badge key={item} variant="outline" className="text-xs">
-                            {item}
-                          </Badge>
-                        ))}
-                      </div>
-                    </div>
+                    )}
                   </div>
 
                   <div className="flex items-center justify-between pt-4 border-t border-border">
