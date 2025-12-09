@@ -216,52 +216,57 @@ const Organizations = () => {
             {filteredOrgs.map((org, index) => (
               <Card
                 key={org.id}
-                className="animate-fade-up"
+                className="animate-fade-up flex flex-col h-full"
                 style={{ animationDelay: `${index * 0.05}s` }}
               >
-                <CardContent className="pt-6">
+                <CardContent className="pt-6 flex flex-col flex-1">
                   <div className="flex items-start gap-4 mb-4">
                     <img
                       src={org.logo}
                       alt={org.name}
-                      className="w-16 h-16 rounded-xl object-cover"
+                      className="w-16 h-16 rounded-xl object-cover flex-shrink-0"
                     />
-                    <div className="flex-1">
+                    <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2 mb-1">
-                        <h3 className="font-semibold text-lg text-foreground">
+                        <h3 className="font-semibold text-lg text-foreground truncate">
                           {org.name}
                         </h3>
                         {org.verified ? (
-                          <CheckCircle2 className="w-4 h-4 text-primary" />
+                          <CheckCircle2 className="w-4 h-4 text-primary flex-shrink-0" />
                         ) : (
-                          <Clock className="w-4 h-4 text-muted-foreground" />
+                          <Clock className="w-4 h-4 text-muted-foreground flex-shrink-0" />
                         )}
                       </div>
                       <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                        <MapPin className="w-4 h-4" />
-                        <span>{org.location}</span>
+                        <MapPin className="w-4 h-4 flex-shrink-0" />
+                        <span className="truncate">{org.location}</span>
                         <span>•</span>
                         <span>{org.type}</span>
                       </div>
                     </div>
                   </div>
 
-                  <p className="text-sm text-muted-foreground mb-4">
+                  <p className="text-sm text-muted-foreground mb-4 line-clamp-2 min-h-[2.5rem]">
                     {org.description}
                   </p>
 
-                  <div className="space-y-3 mb-4">
+                  <div className="space-y-3 mb-4 flex-1">
                     <div>
                       <div className="flex items-center gap-2 text-sm font-medium text-foreground mb-2">
                         <CheckCircle2 className="w-4 h-4 text-primary" />
                         Currently Accepting
                       </div>
                       <div className="flex flex-wrap gap-1">
-                        {org.accepting.map((item) => (
+                        {org.accepting.slice(0, 3).map((item) => (
                           <Badge key={item} variant="success" className="text-xs">
                             {item}
                           </Badge>
                         ))}
+                        {org.accepting.length > 3 && (
+                          <Badge variant="outline" className="text-xs">
+                            +{org.accepting.length - 3} more
+                          </Badge>
+                        )}
                       </div>
                     </div>
 
@@ -272,22 +277,27 @@ const Organizations = () => {
                           Not Accepting
                         </div>
                         <div className="flex flex-wrap gap-1">
-                          {org.notAccepting.map((item) => (
+                          {org.notAccepting.slice(0, 2).map((item) => (
                             <Badge key={item} variant="outline" className="text-xs">
                               {item}
                             </Badge>
                           ))}
+                          {org.notAccepting.length > 2 && (
+                            <Badge variant="outline" className="text-xs">
+                              +{org.notAccepting.length - 2} more
+                            </Badge>
+                          )}
                         </div>
                       </div>
                     )}
                   </div>
 
-                  <div className="flex items-center justify-between pt-4 border-t border-border">
+                  <div className="flex items-center justify-between pt-4 border-t border-border mt-auto">
                     <div className="flex items-center gap-2 text-sm text-muted-foreground">
                       <Package className="w-4 h-4" />
                       <span>{org.itemsNeeded} items needed</span>
                     </div>
-                    <Button size="sm">Contact</Button>
+                    <Button size="sm" variant="default">Contact</Button>
                   </div>
                 </CardContent>
               </Card>
