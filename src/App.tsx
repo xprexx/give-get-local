@@ -10,6 +10,7 @@ import Browse from "./pages/Browse";
 import Organizations from "./pages/Organizations";
 import HowItWorks from "./pages/HowItWorks";
 import Auth from "./pages/Auth";
+import ItemRequests from "./pages/ItemRequests";
 import AdminDashboard from "./pages/admin/Dashboard";
 import AdminUsers from "./pages/admin/Users";
 import AdminOrganizations from "./pages/admin/Organizations";
@@ -18,6 +19,7 @@ import AdminVerifications from "./pages/admin/Verifications";
 import OrganizationDashboard from "./pages/organization/Dashboard";
 import OrganizationProfile from "./pages/organization/Profile";
 import OrganizationCategories from "./pages/organization/Categories";
+import BeneficiaryRequests from "./pages/beneficiary/MyRequests";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -34,7 +36,15 @@ const App = () => (
             <Route path="/browse" element={<Browse />} />
             <Route path="/organizations" element={<Organizations />} />
             <Route path="/how-it-works" element={<HowItWorks />} />
+            <Route path="/item-requests" element={<ItemRequests />} />
             <Route path="/auth" element={<Auth />} />
+            
+            {/* Beneficiary Routes */}
+            <Route path="/beneficiary/requests" element={
+              <ProtectedRoute allowedRoles={['beneficiary']}>
+                <BeneficiaryRequests />
+              </ProtectedRoute>
+            } />
             
             {/* Admin Routes */}
             <Route path="/admin" element={
