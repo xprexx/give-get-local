@@ -158,21 +158,28 @@ const OrganizationVolunteerEvents = () => {
         </div>
 
         {/* Header with Create Button */}
-        <div className="flex items-center justify-between mb-6">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
           <div>
             <h1 className="text-2xl font-bold mb-1">My Events</h1>
             <p className="text-muted-foreground">
               Manage your volunteer events
             </p>
           </div>
-          <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-            <DialogTrigger asChild>
-              <Button className="gap-2">
-                <Plus className="w-4 h-4" />
-                New Event
+          <div className="flex gap-2">
+            <Link to="/organization/volunteer-approvals">
+              <Button variant="outline" className="gap-2">
+                <Users className="w-4 h-4" />
+                Volunteer Approvals
               </Button>
-            </DialogTrigger>
-            <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
+            </Link>
+            <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+              <DialogTrigger asChild>
+                <Button className="gap-2">
+                  <Plus className="w-4 h-4" />
+                  New Event
+                </Button>
+              </DialogTrigger>
+              <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
               <DialogHeader>
                 <DialogTitle>Create Volunteer Event</DialogTitle>
               </DialogHeader>
@@ -270,7 +277,8 @@ const OrganizationVolunteerEvents = () => {
                 </Button>
               </form>
             </DialogContent>
-          </Dialog>
+            </Dialog>
+          </div>
         </div>
 
         {/* Events List */}

@@ -1,7 +1,7 @@
 import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Heart, Menu, X, LogOut, User, Building2, Shield, HandHeart } from "lucide-react";
+import { Heart, Menu, X, LogOut, User, Building2, Shield, HandHeart, Package } from "lucide-react";
 import { useState } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 
@@ -58,6 +58,11 @@ const Navbar = () => {
             <Link to="/volunteer" className="text-muted-foreground hover:text-foreground transition-colors font-medium">
               Volunteer
             </Link>
+            {user && (user.role === 'user' || user.role === 'beneficiary' || user.role === 'organization' || user.role === 'admin') && (
+              <Link to="/donor/pickup-requests" className="text-muted-foreground hover:text-foreground transition-colors font-medium">
+                Pickup Requests
+              </Link>
+            )}
           </div>
 
           <div className="hidden md:flex items-center gap-3">
@@ -127,6 +132,11 @@ const Navbar = () => {
               <Link to="/volunteer" className="text-muted-foreground hover:text-foreground transition-colors font-medium py-2" onClick={() => setIsOpen(false)}>
                 Volunteer
               </Link>
+              {user && (
+                <Link to="/donor/pickup-requests" className="text-muted-foreground hover:text-foreground transition-colors font-medium py-2" onClick={() => setIsOpen(false)}>
+                  Pickup Requests
+                </Link>
+              )}
               <div className="flex flex-col gap-2 pt-4 border-t border-border">
                 {user ? (
                   <>
