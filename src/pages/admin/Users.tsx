@@ -67,9 +67,28 @@ const AdminUsers = () => {
         return <Badge variant="destructive">Admin</Badge>;
       case 'organization':
         return <Badge variant="secondary">Organization</Badge>;
+      case 'beneficiary':
+        return <Badge className="bg-amber-100 text-amber-800 border-amber-200">Beneficiary</Badge>;
       default:
         return <Badge variant="outline">User</Badge>;
     }
+  };
+
+  const getStatusBadge = (user: typeof users[0]) => {
+    if (user.isBanned) {
+      return <Badge variant="destructive">Banned</Badge>;
+    }
+    if (user.status === 'pending') {
+      return <Badge className="bg-yellow-100 text-yellow-800 border-yellow-200">Pending</Badge>;
+    }
+    if (user.status === 'rejected') {
+      return <Badge variant="destructive">Rejected</Badge>;
+    }
+    return (
+      <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">
+        Active
+      </Badge>
+    );
   };
 
   return (
@@ -112,7 +131,8 @@ const AdminUsers = () => {
                   className="h-10 px-3 rounded-md border border-input bg-background"
                 >
                   <option value="all">All Roles</option>
-                  <option value="user">Users</option>
+                  <option value="user">Regular Users</option>
+                  <option value="beneficiary">Beneficiaries</option>
                   <option value="organization">Organizations</option>
                   <option value="admin">Admins</option>
                 </select>
@@ -167,13 +187,7 @@ const AdminUsers = () => {
                     <TableCell>{user.email}</TableCell>
                     <TableCell>{getRoleBadge(user.role)}</TableCell>
                     <TableCell>
-                      {user.isBanned ? (
-                        <Badge variant="destructive">Banned</Badge>
-                      ) : (
-                        <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">
-                          Active
-                        </Badge>
-                      )}
+                      {getStatusBadge(user)}
                     </TableCell>
                     <TableCell className="text-muted-foreground">
                       {format(new Date(user.createdAt), 'MMM d, yyyy')}
