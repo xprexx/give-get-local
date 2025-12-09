@@ -1,3 +1,4 @@
+import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { ArrowRight, Heart } from "lucide-react";
 
@@ -24,20 +25,24 @@ const CTASection = () => {
             </p>
             
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
-              <Button
-                size="lg"
-                className="bg-primary-foreground text-primary hover:bg-primary-foreground/90"
-              >
-                Start Donating Today
-                <ArrowRight className="w-5 h-5" />
-              </Button>
-              <Button
-                size="lg"
-                variant="ghost"
-                className="text-primary-foreground border-2 border-primary-foreground/30 hover:bg-primary-foreground/10"
-              >
-                Register as Organization
-              </Button>
+              <Link to="/donate">
+                <Button
+                  size="lg"
+                  className="bg-primary-foreground text-primary hover:bg-primary-foreground/90"
+                >
+                  Start Donating Today
+                  <ArrowRight className="w-5 h-5" />
+                </Button>
+              </Link>
+              <Link to="/auth">
+                <Button
+                  size="lg"
+                  variant="ghost"
+                  className="text-primary-foreground border-2 border-primary-foreground/30 hover:bg-primary-foreground/10"
+                >
+                  Register as Organization
+                </Button>
+              </Link>
             </div>
           </div>
         </div>

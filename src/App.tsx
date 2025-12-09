@@ -14,6 +14,7 @@ import ItemRequests from "./pages/ItemRequests";
 import ImpactStories from "./pages/ImpactStories";
 import Crowdfunding from "./pages/Crowdfunding";
 import VolunteerEvents from "./pages/VolunteerEvents";
+import DonateListing from "./pages/DonateListing";
 import AdminDashboard from "./pages/admin/Dashboard";
 import AdminUsers from "./pages/admin/Users";
 import AdminOrganizations from "./pages/admin/Organizations";
@@ -46,6 +47,7 @@ const App = () => (
             <Route path="/impact-stories" element={<ImpactStories />} />
             <Route path="/crowdfunding" element={<Crowdfunding />} />
             <Route path="/volunteer" element={<VolunteerEvents />} />
+            <Route path="/donate" element={<DonateListing />} />
             <Route path="/auth" element={<Auth />} />
             
             {/* Beneficiary Routes */}

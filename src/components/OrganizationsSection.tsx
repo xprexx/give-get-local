@@ -1,3 +1,4 @@
+import { Link } from "react-router-dom";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -64,7 +65,9 @@ const OrganizationsSection = () => {
               Have many items to donate? Connect directly with local organizations that need them most.
             </p>
           </div>
-          <Button variant="outline">View All Organizations</Button>
+          <Link to="/organizations">
+            <Button variant="outline">View All Organizations</Button>
+          </Link>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
