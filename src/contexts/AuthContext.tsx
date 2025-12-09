@@ -68,12 +68,27 @@ export interface ItemRequest {
   createdAt: string;
 }
 
+export interface DonationListing {
+  id: string;
+  userId: string;
+  title: string;
+  description: string;
+  images: string[];
+  category: string;
+  subcategory?: string;
+  condition: string;
+  pickupLocation: string;
+  status: 'available' | 'claimed' | 'removed';
+  createdAt: string;
+}
+
 interface AuthContextType {
   user: User | null;
   users: User[];
   organizations: Organization[];
   categoryProposals: CategoryProposal[];
   itemRequests: ItemRequest[];
+  donationListings: DonationListing[];
   categories: { name: string; subcategories: string[] }[];
   login: (email: string, password: string) => Promise<{ success: boolean; error?: string }>;
   signup: (email: string, password: string, name: string, role: UserRole, verificationDocument?: string, verificationDocumentName?: string, beneficiaryDetails?: { nric: string; address: string; birthdate: string }) => Promise<{ success: boolean; error?: string }>;
@@ -81,6 +96,7 @@ interface AuthContextType {
   resetPassword: (userId: string) => void;
   banUser: (userId: string) => void;
   unbanUser: (userId: string) => void;
+  deleteUser: (userId: string) => void;
   approveUser: (userId: string) => void;
   rejectUser: (userId: string) => void;
   updateOrganization: (org: Partial<Organization>) => void;
@@ -99,6 +115,7 @@ interface AuthContextType {
   deleteItemRequest: (requestId: string) => void;
   approveItemRequest: (requestId: string) => void;
   rejectItemRequest: (requestId: string, note: string) => void;
+  createDonationListing: (listing: Omit<DonationListing, 'id' | 'userId' | 'status' | 'createdAt'>) => void;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -120,6 +137,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [organizations, setOrganizations] = useState<Organization[]>([]);
   const [categoryProposals, setCategoryProposals] = useState<CategoryProposal[]>([]);
   const [itemRequests, setItemRequests] = useState<ItemRequest[]>([]);
+  const [donationListings, setDonationListings] = useState<DonationListing[]>([]);
   const [categories, setCategories] = useState(DEFAULT_CATEGORIES);
 
   useEffect(() => {
@@ -129,6 +147,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     const storedProposals = localStorage.getItem('givelocal_proposals');
     const storedCategories = localStorage.getItem('givelocal_categories');
     const storedItemRequests = localStorage.getItem('givelocal_item_requests');
+    const storedDonationListings = localStorage.getItem('givelocal_donation_listings');
 
     if (storedUser) setUser(JSON.parse(storedUser));
     if (storedUsers) setUsers(JSON.parse(storedUsers));
@@ -136,6 +155,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     if (storedProposals) setCategoryProposals(JSON.parse(storedProposals));
     if (storedCategories) setCategories(JSON.parse(storedCategories));
     if (storedItemRequests) setItemRequests(JSON.parse(storedItemRequests));
+    if (storedDonationListings) setDonationListings(JSON.parse(storedDonationListings));
 
     // Create default admin if none exists
     if (!storedUsers || JSON.parse(storedUsers).length === 0) {
@@ -297,6 +317,44 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     );
     setUsers(updatedUsers);
     saveToStorage('givelocal_users', updatedUsers);
+  };
+
+  const deleteUser = (userId: string) => {
+    const targetUser = users.find(u => u.id === userId);
+    if (!targetUser || targetUser.role === 'admin') return;
+
+    // Delete user
+    const updatedUsers = users.filter(u => u.id !== userId);
+    setUsers(updatedUsers);
+    saveToStorage('givelocal_users', updatedUsers);
+
+    // Delete password
+    const passwords = JSON.parse(localStorage.getItem('givelocal_passwords') || '{}');
+    delete passwords[targetUser.email];
+    saveToStorage('givelocal_passwords', passwords);
+
+    // Delete organization if exists
+    const updatedOrgs = organizations.filter(o => o.userId !== userId);
+    setOrganizations(updatedOrgs);
+    saveToStorage('givelocal_organizations', updatedOrgs);
+
+    // Delete category proposals from this user's organization
+    const userOrg = organizations.find(o => o.userId === userId);
+    if (userOrg) {
+      const updatedProposals = categoryProposals.filter(p => p.organizationId !== userOrg.id);
+      setCategoryProposals(updatedProposals);
+      saveToStorage('givelocal_proposals', updatedProposals);
+    }
+
+    // Delete item requests
+    const updatedRequests = itemRequests.filter(r => r.userId !== userId);
+    setItemRequests(updatedRequests);
+    saveToStorage('givelocal_item_requests', updatedRequests);
+
+    // Delete donation listings
+    const updatedListings = donationListings.filter(l => l.userId !== userId);
+    setDonationListings(updatedListings);
+    saveToStorage('givelocal_donation_listings', updatedListings);
   };
 
   const approveUser = (userId: string) => {
@@ -504,6 +562,21 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     saveToStorage('givelocal_item_requests', updatedRequests);
   };
 
+  const createDonationListing = (listing: Omit<DonationListing, 'id' | 'userId' | 'status' | 'createdAt'>) => {
+    if (!user) return;
+    
+    const newListing: DonationListing = {
+      ...listing,
+      id: `listing-${Date.now()}`,
+      userId: user.id,
+      status: 'available',
+      createdAt: new Date().toISOString(),
+    };
+    const updatedListings = [...donationListings, newListing];
+    setDonationListings(updatedListings);
+    saveToStorage('givelocal_donation_listings', updatedListings);
+  };
+
   return (
     <AuthContext.Provider value={{
       user,
@@ -511,6 +584,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       organizations,
       categoryProposals,
       itemRequests,
+      donationListings,
       categories,
       login,
       signup,
@@ -518,6 +592,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       resetPassword,
       banUser,
       unbanUser,
+      deleteUser,
       approveUser,
       rejectUser,
       updateOrganization,
@@ -536,6 +611,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       deleteItemRequest,
       approveItemRequest,
       rejectItemRequest,
+      createDonationListing,
     }}>
       {children}
     </AuthContext.Provider>

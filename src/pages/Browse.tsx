@@ -5,8 +5,9 @@ import DonationCard, { DonationItem } from "@/components/DonationCard";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Search, SlidersHorizontal, MapPin } from "lucide-react";
+import { useAuth } from "@/contexts/AuthContext";
 
-const allItems: DonationItem[] = [
+const sampleItems: DonationItem[] = [
   {
     id: "1",
     title: "Vintage Wooden Bookshelf",
@@ -119,9 +120,54 @@ const allItems: DonationItem[] = [
 
 const categories = ["All", "Furniture", "Clothing", "Electronics", "Books", "Music", "Baby", "Kitchen", "Sports", "Toys"];
 
+const getConditionLabel = (condition: string) => {
+  switch (condition) {
+    case 'new': return 'Brand New';
+    case 'like-new': return 'Like New';
+    case 'good': return 'Good Condition';
+    case 'fair': return 'Fair Condition';
+    default: return condition;
+  }
+};
+
+const getTimeAgo = (dateString: string) => {
+  const date = new Date(dateString);
+  const now = new Date();
+  const diffMs = now.getTime() - date.getTime();
+  const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
+  const diffDays = Math.floor(diffHours / 24);
+  
+  if (diffDays > 0) return `${diffDays}d ago`;
+  if (diffHours > 0) return `${diffHours}h ago`;
+  return 'Just now';
+};
+
 const Browse = () => {
+  const { donationListings, users } = useAuth();
   const [selectedCategory, setSelectedCategory] = useState("All");
   const [searchQuery, setSearchQuery] = useState("");
+
+  // Convert user donation listings to DonationItem format
+  const userListings: DonationItem[] = donationListings
+    .filter(listing => listing.status === 'available')
+    .map(listing => {
+      const donor = users.find(u => u.id === listing.userId);
+      return {
+        id: listing.id,
+        title: listing.title,
+        description: listing.description,
+        image: listing.images[0] || "https://images.unsplash.com/photo-1560472354-b33ff0c44a43?w=600&h=450&fit=crop",
+        category: listing.category,
+        durability: getConditionLabel(listing.condition),
+        location: listing.pickupLocation,
+        distance: "Nearby",
+        postedAt: getTimeAgo(listing.createdAt),
+        views: Math.floor(Math.random() * 50) + 1,
+      };
+    });
+
+  // Combine sample items with user-created listings (user listings first)
+  const allItems = [...userListings, ...sampleItems];
 
   const filteredItems = allItems.filter((item) => {
     const matchesCategory = selectedCategory === "All" || item.category === selectedCategory;
