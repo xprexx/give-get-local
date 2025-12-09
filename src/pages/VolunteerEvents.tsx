@@ -11,7 +11,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
-import { Heart, MapPin, Calendar, Clock, Users, Building2, CheckCircle } from "lucide-react";
+import { Heart, MapPin, Calendar, Clock, Users, Building2, CheckCircle, Hourglass } from "lucide-react";
 import { format } from "date-fns";
 
 interface VolunteerEvent {
@@ -29,6 +29,18 @@ interface VolunteerEvent {
   image: string;
   status: "upcoming" | "full";
   requirements: string[];
+}
+
+interface VolunteerRegistration {
+  id: string;
+  eventId: string;
+  name: string;
+  email: string;
+  phone: string;
+  age: number;
+  experience: string;
+  status: "pending" | "approved" | "rejected";
+  createdAt: string;
 }
 
 const VolunteerEvents = () => {
@@ -118,6 +130,7 @@ const VolunteerEvents = () => {
     },
   ]);
 
+  const [registrations, setRegistrations] = useState<VolunteerRegistration[]>([]);
   const [selectedEvent, setSelectedEvent] = useState<VolunteerEvent | null>(null);
   const [isSignupDialogOpen, setIsSignupDialogOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -126,6 +139,7 @@ const VolunteerEvents = () => {
     name: "",
     email: "",
     phone: "",
+    age: "",
     experience: "",
   });
 
@@ -143,6 +157,7 @@ const VolunteerEvents = () => {
       name: user?.name || "",
       email: user?.email || "",
       phone: "",
+      age: "",
       experience: "",
     });
     setIsSignupDialogOpen(true);
@@ -151,10 +166,20 @@ const VolunteerEvents = () => {
   const handleSignupSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!formData.name || !formData.email || !formData.phone) {
+    if (!formData.name || !formData.email || !formData.phone || !formData.age) {
       toast({
         title: "Missing Information",
         description: "Please fill in all required fields.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    const age = parseInt(formData.age);
+    if (isNaN(age) || age < 16 || age > 100) {
+      toast({
+        title: "Invalid Age",
+        description: "Please enter a valid age (16 or above).",
         variant: "destructive",
       });
       return;
@@ -165,21 +190,20 @@ const VolunteerEvents = () => {
     // Simulate API call
     await new Promise(resolve => setTimeout(resolve, 1500));
 
-    // Update event with new volunteer
-    setEvents(prev => prev.map(event => {
-      if (event.id === selectedEvent?.id) {
-        const newSpotsFilled = event.spotsFilled + 1;
-        return {
-          ...event,
-          spotsFilled: newSpotsFilled,
-          status: newSpotsFilled >= event.spotsTotal ? "full" as const : "upcoming" as const,
-        };
-      }
-      return event;
-    }));
+    // Create registration with pending status (waiting for org approval)
+    const newRegistration: VolunteerRegistration = {
+      id: `reg-${Date.now()}`,
+      eventId: selectedEvent!.id,
+      name: formData.name,
+      email: formData.email,
+      phone: formData.phone,
+      age: age,
+      experience: formData.experience,
+      status: "pending",
+      createdAt: new Date().toISOString(),
+    };
 
-    // Increment total volunteers
-    setTotalVolunteers(prev => prev + 1);
+    setRegistrations(prev => [...prev, newRegistration]);
 
     setIsSubmitting(false);
     setSignupSuccess(true);
@@ -387,26 +411,26 @@ const VolunteerEvents = () => {
         <DialogContent className="max-w-md">
           <DialogHeader>
             <DialogTitle>
-              {signupSuccess ? "Registration Successful!" : `Sign Up: ${selectedEvent?.title}`}
+              {signupSuccess ? "Application Submitted!" : `Sign Up: ${selectedEvent?.title}`}
             </DialogTitle>
           </DialogHeader>
           
           {signupSuccess ? (
             <div className="text-center py-8">
               <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-4">
-                <CheckCircle className="w-8 h-8 text-primary" />
+                <Hourglass className="w-8 h-8 text-primary" />
               </div>
-              <h3 className="text-xl font-semibold mb-2">You're Registered!</h3>
+              <h3 className="text-xl font-semibold mb-2">Pending Approval</h3>
               <p className="text-muted-foreground mb-4">
-                Thank you for signing up to volunteer at {selectedEvent?.title}.
+                Your volunteer application for {selectedEvent?.title} has been submitted and is pending approval from the organization.
               </p>
-              <div className="text-sm text-muted-foreground space-y-1">
+              <div className="text-sm text-muted-foreground space-y-1 mb-4">
+                <p><strong>Event:</strong> {selectedEvent?.title}</p>
                 <p><strong>Date:</strong> {selectedEvent && format(new Date(selectedEvent.date), 'EEEE, MMMM d, yyyy')}</p>
-                <p><strong>Time:</strong> {selectedEvent?.startTime} - {selectedEvent?.endTime}</p>
-                <p><strong>Location:</strong> {selectedEvent?.location}</p>
+                <p><strong>Organization:</strong> {selectedEvent?.organizationName}</p>
               </div>
-              <p className="text-sm text-muted-foreground mt-4">
-                A confirmation email will be sent to {formData.email}.
+              <p className="text-sm text-muted-foreground">
+                You will receive an email at {formData.email} once your application is reviewed.
               </p>
               <Button className="mt-6" onClick={closeSignupDialog}>
                 Close
@@ -431,15 +455,29 @@ const VolunteerEvents = () => {
                 />
               </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="email">Email Address *</Label>
-                <Input
-                  id="email"
-                  type="email"
-                  placeholder="john@example.com"
-                  value={formData.email}
-                  onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                />
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="email">Email Address *</Label>
+                  <Input
+                    id="email"
+                    type="email"
+                    placeholder="john@example.com"
+                    value={formData.email}
+                    onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="age">Age *</Label>
+                  <Input
+                    id="age"
+                    type="number"
+                    min="16"
+                    max="100"
+                    placeholder="25"
+                    value={formData.age}
+                    onChange={(e) => setFormData({ ...formData, age: e.target.value })}
+                  />
+                </div>
               </div>
 
               <div className="space-y-2">
@@ -474,12 +512,16 @@ const VolunteerEvents = () => {
                 </div>
               )}
 
+              <p className="text-xs text-muted-foreground">
+                Your application will be reviewed by {selectedEvent?.organizationName}. You will be notified once approved.
+              </p>
+
               <DialogFooter>
                 <Button type="button" variant="outline" onClick={closeSignupDialog}>
                   Cancel
                 </Button>
                 <Button type="submit" disabled={isSubmitting}>
-                  {isSubmitting ? "Submitting..." : "Confirm Registration"}
+                  {isSubmitting ? "Submitting..." : "Submit Application"}
                 </Button>
               </DialogFooter>
             </form>

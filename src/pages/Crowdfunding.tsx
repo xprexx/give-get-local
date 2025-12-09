@@ -481,10 +481,6 @@ const Crowdfunding = () => {
                 </div>
               </div>
 
-              <p className="text-xs text-muted-foreground">
-                This is a demo payment. No actual charges will be made.
-              </p>
-
               <DialogFooter>
                 <Button type="button" variant="outline" onClick={closePaymentDialog}>
                   Cancel
