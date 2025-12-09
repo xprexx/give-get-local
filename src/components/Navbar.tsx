@@ -47,6 +47,11 @@ const Navbar = () => {
                 Item Requests
               </Link>
             )}
+            {user && (
+              <Link to="/donor/pickup-requests" className="text-muted-foreground hover:text-foreground transition-colors font-medium">
+                Pickup Requests
+              </Link>
+            )}
             <Link to="/organizations" className="text-muted-foreground hover:text-foreground transition-colors font-medium">
               Organizations
             </Link>
@@ -59,11 +64,6 @@ const Navbar = () => {
             <Link to="/volunteer" className="text-muted-foreground hover:text-foreground transition-colors font-medium">
               Volunteer
             </Link>
-            {user && (user.role === 'user' || user.role === 'beneficiary' || user.role === 'organization' || user.role === 'admin') && (
-              <Link to="/donor/pickup-requests" className="text-muted-foreground hover:text-foreground transition-colors font-medium">
-                Pickup Requests
-              </Link>
-            )}
           </div>
 
           <div className="hidden md:flex items-center gap-3">
@@ -122,6 +122,11 @@ const Navbar = () => {
                   Item Requests
                 </Link>
               )}
+              {user && (
+                <Link to="/donor/pickup-requests" className="text-muted-foreground hover:text-foreground transition-colors font-medium py-2" onClick={() => setIsOpen(false)}>
+                  Pickup Requests
+                </Link>
+              )}
               <Link to="/organizations" className="text-muted-foreground hover:text-foreground transition-colors font-medium py-2" onClick={() => setIsOpen(false)}>
                 Organizations
               </Link>
@@ -134,11 +139,6 @@ const Navbar = () => {
               <Link to="/volunteer" className="text-muted-foreground hover:text-foreground transition-colors font-medium py-2" onClick={() => setIsOpen(false)}>
                 Volunteer
               </Link>
-              {user && (
-                <Link to="/donor/pickup-requests" className="text-muted-foreground hover:text-foreground transition-colors font-medium py-2" onClick={() => setIsOpen(false)}>
-                  Pickup Requests
-                </Link>
-              )}
               <div className="flex flex-col gap-2 pt-4 border-t border-border">
                 {user ? (
                   <>
