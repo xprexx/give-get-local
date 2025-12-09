@@ -1,7 +1,7 @@
 import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Heart, Menu, X, LogOut, User, Building2, Shield, HandHeart, Settings } from "lucide-react";
+import { Heart, Menu, X, LogOut, User, Building2, Shield, HandHeart, LayoutDashboard } from "lucide-react";
 import { useState } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import NotificationDropdown from "@/components/NotificationDropdown";
@@ -70,7 +70,7 @@ const Navbar = () => {
             {user ? (
               <>
                 <NotificationDropdown />
-                <Link to={getDashboardLink()}>
+                <Link to="/account">
                   <Button variant="ghost" className="gap-2">
                     {user.role === 'admin' && <Shield className="h-4 w-4" />}
                     {user.role === 'organization' && <Building2 className="h-4 w-4" />}
@@ -82,11 +82,13 @@ const Navbar = () => {
                     )}
                   </Button>
                 </Link>
-                <Link to="/account">
-                  <Button variant="ghost" size="icon">
-                    <Settings className="h-4 w-4" />
-                  </Button>
-                </Link>
+                {(user.role === 'admin' || user.role === 'organization') && (
+                  <Link to={getDashboardLink()}>
+                    <Button variant="ghost" size="icon">
+                      <LayoutDashboard className="h-4 w-4" />
+                    </Button>
+                  </Link>
+                )}
                 <Button variant="ghost" size="icon" onClick={handleLogout}>
                   <LogOut className="h-4 w-4" />
                 </Button>
@@ -147,21 +149,23 @@ const Navbar = () => {
               <div className="flex flex-col gap-2 pt-4 border-t border-border">
                 {user ? (
                   <>
-                    <Link to={getDashboardLink()} onClick={() => setIsOpen(false)}>
+                    <Link to="/account" onClick={() => setIsOpen(false)}>
                       <Button variant="ghost" className="w-full gap-2">
                         {user.role === 'admin' && <Shield className="h-4 w-4" />}
                         {user.role === 'organization' && <Building2 className="h-4 w-4" />}
                         {user.role === 'beneficiary' && <HandHeart className="h-4 w-4" />}
                         {user.role === 'user' && <User className="h-4 w-4" />}
-                        {user.role === 'beneficiary' ? 'My Requests' : 'Dashboard'}
+                        {user.name} - Account
                       </Button>
                     </Link>
-                    <Link to="/account" onClick={() => setIsOpen(false)}>
-                      <Button variant="ghost" className="w-full gap-2">
-                        <Settings className="h-4 w-4" />
-                        Account Settings
-                      </Button>
-                    </Link>
+                    {(user.role === 'admin' || user.role === 'organization') && (
+                      <Link to={getDashboardLink()} onClick={() => setIsOpen(false)}>
+                        <Button variant="ghost" className="w-full gap-2">
+                          <LayoutDashboard className="h-4 w-4" />
+                          Dashboard
+                        </Button>
+                      </Link>
+                    )}
                     <Button variant="ghost" className="w-full" onClick={handleLogout}>
                       <LogOut className="h-4 w-4 mr-2" />
                       Logout
