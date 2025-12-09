@@ -26,7 +26,9 @@ import OrganizationProfile from "./pages/organization/Profile";
 import OrganizationCategories from "./pages/organization/Categories";
 import OrganizationCrowdfunding from "./pages/organization/Crowdfunding";
 import OrganizationVolunteerEvents from "./pages/organization/VolunteerEvents";
+import OrganizationVolunteerApprovals from "./pages/organization/VolunteerApprovals";
 import BeneficiaryItemRequests from "./pages/beneficiary/ItemRequests";
+import DonorPickupRequests from "./pages/donor/PickupRequests";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -113,6 +115,18 @@ const App = () => (
             <Route path="/organization/volunteer-events" element={
               <ProtectedRoute allowedRoles={['organization']}>
                 <OrganizationVolunteerEvents />
+              </ProtectedRoute>
+            } />
+            <Route path="/organization/volunteer-approvals" element={
+              <ProtectedRoute allowedRoles={['organization']}>
+                <OrganizationVolunteerApprovals />
+              </ProtectedRoute>
+            } />
+
+            {/* Donor Routes */}
+            <Route path="/donor/pickup-requests" element={
+              <ProtectedRoute allowedRoles={['user', 'beneficiary', 'organization', 'admin']}>
+                <DonorPickupRequests />
               </ProtectedRoute>
             } />
 
