@@ -3,7 +3,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Link } from 'react-router-dom';
-import { Building2, Tags, FileText, Clock, CheckCircle, XCircle, LogOut, AlertCircle } from 'lucide-react';
+import { Building2, Tags, FileText, Clock, CheckCircle, XCircle, LogOut, AlertCircle, DollarSign, Calendar, Users } from 'lucide-react';
 
 const OrganizationDashboard = () => {
   const { user, organizations, categoryProposals, logout } = useAuth();
@@ -110,7 +110,7 @@ const OrganizationDashboard = () => {
         </div>
 
         {/* Quick Actions */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
           <Link to="/organization/profile">
             <Card className="hover:shadow-lg transition-shadow cursor-pointer h-full">
               <CardHeader>
@@ -141,6 +141,40 @@ const OrganizationDashboard = () => {
               </CardHeader>
               <CardContent>
                 <Button className="w-full" variant="secondary">Manage Categories</Button>
+              </CardContent>
+            </Card>
+          </Link>
+
+          <Link to="/organization/crowdfunding">
+            <Card className="hover:shadow-lg transition-shadow cursor-pointer h-full">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <DollarSign className="h-5 w-5 text-primary" />
+                  Crowdfunding
+                </CardTitle>
+                <CardDescription>
+                  Create and manage fundraising campaigns
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <Button className="w-full" variant="outline">Manage Campaigns</Button>
+              </CardContent>
+            </Card>
+          </Link>
+
+          <Link to="/organization/volunteer-events">
+            <Card className="hover:shadow-lg transition-shadow cursor-pointer h-full">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Users className="h-5 w-5 text-secondary" />
+                  Volunteer Events
+                </CardTitle>
+                <CardDescription>
+                  Create events and find volunteers
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <Button className="w-full" variant="outline">Manage Events</Button>
               </CardContent>
             </Card>
           </Link>

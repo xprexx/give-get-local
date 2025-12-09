@@ -11,6 +11,9 @@ import Organizations from "./pages/Organizations";
 import HowItWorks from "./pages/HowItWorks";
 import Auth from "./pages/Auth";
 import ItemRequests from "./pages/ItemRequests";
+import ImpactStories from "./pages/ImpactStories";
+import Crowdfunding from "./pages/Crowdfunding";
+import VolunteerEvents from "./pages/VolunteerEvents";
 import AdminDashboard from "./pages/admin/Dashboard";
 import AdminUsers from "./pages/admin/Users";
 import AdminOrganizations from "./pages/admin/Organizations";
@@ -20,7 +23,9 @@ import AdminItemRequestModeration from "./pages/admin/ItemRequestModeration";
 import OrganizationDashboard from "./pages/organization/Dashboard";
 import OrganizationProfile from "./pages/organization/Profile";
 import OrganizationCategories from "./pages/organization/Categories";
-import BeneficiaryRequests from "./pages/beneficiary/MyRequests";
+import OrganizationCrowdfunding from "./pages/organization/Crowdfunding";
+import OrganizationVolunteerEvents from "./pages/organization/VolunteerEvents";
+import BeneficiaryItemRequests from "./pages/beneficiary/ItemRequests";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -38,12 +43,15 @@ const App = () => (
             <Route path="/organizations" element={<Organizations />} />
             <Route path="/how-it-works" element={<HowItWorks />} />
             <Route path="/item-requests" element={<ItemRequests />} />
+            <Route path="/impact-stories" element={<ImpactStories />} />
+            <Route path="/crowdfunding" element={<Crowdfunding />} />
+            <Route path="/volunteer" element={<VolunteerEvents />} />
             <Route path="/auth" element={<Auth />} />
             
             {/* Beneficiary Routes */}
             <Route path="/beneficiary/requests" element={
               <ProtectedRoute allowedRoles={['beneficiary']}>
-                <BeneficiaryRequests />
+                <BeneficiaryItemRequests />
               </ProtectedRoute>
             } />
             
@@ -93,6 +101,16 @@ const App = () => (
             <Route path="/organization/categories" element={
               <ProtectedRoute allowedRoles={['organization']}>
                 <OrganizationCategories />
+              </ProtectedRoute>
+            } />
+            <Route path="/organization/crowdfunding" element={
+              <ProtectedRoute allowedRoles={['organization']}>
+                <OrganizationCrowdfunding />
+              </ProtectedRoute>
+            } />
+            <Route path="/organization/volunteer-events" element={
+              <ProtectedRoute allowedRoles={['organization']}>
+                <OrganizationVolunteerEvents />
               </ProtectedRoute>
             } />
 

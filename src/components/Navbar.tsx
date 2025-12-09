@@ -38,20 +38,27 @@ const Navbar = () => {
             <Link to="/browse" className="text-muted-foreground hover:text-foreground transition-colors font-medium">
               Browse Items
             </Link>
-            <Link to="/item-requests" className="text-muted-foreground hover:text-foreground transition-colors font-medium">
-              Item Requests
-            </Link>
+            {user?.role === 'beneficiary' && user?.status === 'active' ? (
+              <Link to="/beneficiary/requests" className="text-muted-foreground hover:text-foreground transition-colors font-medium">
+                Item Requests
+              </Link>
+            ) : (
+              <Link to="/item-requests" className="text-muted-foreground hover:text-foreground transition-colors font-medium">
+                Item Requests
+              </Link>
+            )}
             <Link to="/organizations" className="text-muted-foreground hover:text-foreground transition-colors font-medium">
               Organizations
             </Link>
-            <Link to="/how-it-works" className="text-muted-foreground hover:text-foreground transition-colors font-medium">
-              How It Works
+            <Link to="/impact-stories" className="text-muted-foreground hover:text-foreground transition-colors font-medium">
+              Impact
             </Link>
-            {user?.role === 'beneficiary' && user?.status === 'active' && (
-              <Link to="/beneficiary/requests" className="text-muted-foreground hover:text-foreground transition-colors font-medium">
-                My Requests
-              </Link>
-            )}
+            <Link to="/crowdfunding" className="text-muted-foreground hover:text-foreground transition-colors font-medium">
+              Crowdfunding
+            </Link>
+            <Link to="/volunteer" className="text-muted-foreground hover:text-foreground transition-colors font-medium">
+              Volunteer
+            </Link>
           </div>
 
           <div className="hidden md:flex items-center gap-3">
@@ -100,20 +107,27 @@ const Navbar = () => {
               <Link to="/browse" className="text-muted-foreground hover:text-foreground transition-colors font-medium py-2" onClick={() => setIsOpen(false)}>
                 Browse Items
               </Link>
-              <Link to="/item-requests" className="text-muted-foreground hover:text-foreground transition-colors font-medium py-2" onClick={() => setIsOpen(false)}>
-                Item Requests
-              </Link>
+              {user?.role === 'beneficiary' && user?.status === 'active' ? (
+                <Link to="/beneficiary/requests" className="text-muted-foreground hover:text-foreground transition-colors font-medium py-2" onClick={() => setIsOpen(false)}>
+                  Item Requests
+                </Link>
+              ) : (
+                <Link to="/item-requests" className="text-muted-foreground hover:text-foreground transition-colors font-medium py-2" onClick={() => setIsOpen(false)}>
+                  Item Requests
+                </Link>
+              )}
               <Link to="/organizations" className="text-muted-foreground hover:text-foreground transition-colors font-medium py-2" onClick={() => setIsOpen(false)}>
                 Organizations
               </Link>
-              <Link to="/how-it-works" className="text-muted-foreground hover:text-foreground transition-colors font-medium py-2" onClick={() => setIsOpen(false)}>
-                How It Works
+              <Link to="/impact-stories" className="text-muted-foreground hover:text-foreground transition-colors font-medium py-2" onClick={() => setIsOpen(false)}>
+                Impact
               </Link>
-              {user?.role === 'beneficiary' && user?.status === 'active' && (
-                <Link to="/beneficiary/requests" className="text-muted-foreground hover:text-foreground transition-colors font-medium py-2" onClick={() => setIsOpen(false)}>
-                  My Requests
-                </Link>
-              )}
+              <Link to="/crowdfunding" className="text-muted-foreground hover:text-foreground transition-colors font-medium py-2" onClick={() => setIsOpen(false)}>
+                Crowdfunding
+              </Link>
+              <Link to="/volunteer" className="text-muted-foreground hover:text-foreground transition-colors font-medium py-2" onClick={() => setIsOpen(false)}>
+                Volunteer
+              </Link>
               <div className="flex flex-col gap-2 pt-4 border-t border-border">
                 {user ? (
                   <>
