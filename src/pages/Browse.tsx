@@ -145,7 +145,7 @@ const getTimeAgo = (dateString: string) => {
 };
 
 const Browse = () => {
-  const { users } = useAuth();
+  const { user } = useAuth();
   const { listings: donationListings, refresh } = useDonationListings();
   const [selectedCategory, setSelectedCategory] = useState("All");
   const [searchQuery, setSearchQuery] = useState("");
@@ -159,7 +159,6 @@ const Browse = () => {
   const userListings: DonationItem[] = donationListings
     .filter(listing => listing.status === 'available')
     .map(listing => {
-      const donor = users.find(u => u.id === listing.user_id);
       return {
         id: listing.id,
         title: listing.title,
@@ -172,6 +171,7 @@ const Browse = () => {
         distance: "Nearby",
         postedAt: getTimeAgo(listing.created_at || ''),
         views: Math.floor(Math.random() * 50) + 1,
+        donorId: listing.user_id, // Pass the owner ID to prevent self-requesting
       };
     });
 
