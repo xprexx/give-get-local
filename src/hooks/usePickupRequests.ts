@@ -105,7 +105,32 @@ export const usePickupRequests = () => {
         status: 'pending',
       });
     
-    if (!error) await fetchRequests();
+    if (!error) {
+      await fetchRequests();
+      
+      // Notify the donor about the new pickup request
+      const { data: listing } = await supabase
+        .from('donation_listings')
+        .select('user_id, title')
+        .eq('id', request.listing_id)
+        .single();
+      
+      const { data: requesterProfile } = await supabase
+        .from('profiles')
+        .select('name')
+        .eq('id', user.id)
+        .single();
+      
+      if (listing) {
+        await supabase.from('notifications').insert({
+          user_id: listing.user_id,
+          type: 'pickup',
+          title: 'New Pickup Request',
+          message: `${requesterProfile?.name || 'Someone'} wants to pick up your item "${listing.title}"`,
+          link: '/donor/pickup-requests',
+        });
+      }
+    }
     return { error };
   };
 

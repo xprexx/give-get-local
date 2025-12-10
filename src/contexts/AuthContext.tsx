@@ -28,10 +28,8 @@ export interface Organization {
   userId?: string;
   name: string;
   description: string;
-  accepted_categories: string[];
-  acceptedCategories?: string[];
-  rejected_categories: string[];
-  rejectedCategories?: string[];
+  category_preferences: string[];
+  categoryPreferences?: string[];
   subcategoryPreferences?: SubcategoryPreference[];
   status: 'pending' | 'approved' | 'rejected';
   verification_document?: string;
@@ -76,17 +74,12 @@ export interface ItemRequest {
   title: string;
   description: string;
   category: string;
-  is_custom_category: boolean;
-  isCustomCategory?: boolean;
-  location: string;
-  urgency: 'low' | 'medium' | 'high';
-  status: 'active' | 'fulfilled' | 'cancelled';
-  moderation_status: 'pending' | 'approved' | 'rejected';
-  moderationStatus?: 'pending' | 'approved' | 'rejected';
-  moderation_note?: string;
-  moderationNote?: string;
+  subcategory?: string;
+  urgency: 'low' | 'normal' | 'high';
+  status: 'pending' | 'approved' | 'rejected' | 'fulfilled';
   created_at: string;
   createdAt?: string;
+  updated_at: string;
 }
 
 export interface DonationListing {
@@ -226,8 +219,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       setOrganizations(data.map(o => ({
         ...o,
         userId: o.user_id,
-        acceptedCategories: o.accepted_categories,
-        rejectedCategories: o.rejected_categories,
+        categoryPreferences: o.category_preferences,
         createdAt: o.created_at,
         verificationDocument: o.verification_document,
         verificationDocumentName: o.verification_document_name,
@@ -285,9 +277,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       setItemRequests(data.map(r => ({
         ...r,
         userId: r.user_id,
-        isCustomCategory: r.is_custom_category,
-        moderationStatus: r.moderation_status,
-        moderationNote: r.moderation_note,
         createdAt: r.created_at,
       })) as unknown as ItemRequest[]);
     }

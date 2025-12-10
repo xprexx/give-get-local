@@ -8,12 +8,11 @@ export interface VolunteerEvent {
   description: string;
   location: string;
   event_date: string;
-  start_time: string;
-  end_time: string;
-  spots_total: number;
-  spots_filled: number;
+  event_time: string;
+  max_volunteers: number;
+  current_volunteers: number;
   status: 'upcoming' | 'ongoing' | 'completed' | 'cancelled';
-  requirements: string[];
+  image_url?: string;
   created_at: string;
   updated_at: string;
   // Joined data
@@ -79,13 +78,19 @@ export const useVolunteerEvents = () => {
     fetchEvents();
   }, []);
 
-  const createEvent = async (event: Omit<VolunteerEvent, 'id' | 'organization_id' | 'spots_filled' | 'status' | 'created_at' | 'updated_at'>, organizationId: string) => {
+  const createEvent = async (event: Omit<VolunteerEvent, 'id' | 'organization_id' | 'current_volunteers' | 'status' | 'created_at' | 'updated_at' | 'organizations'>, organizationId: string) => {
     const { error } = await supabase
       .from('volunteer_events')
       .insert({
-        ...event,
+        title: event.title,
+        description: event.description,
+        location: event.location,
+        event_date: event.event_date,
+        event_time: event.event_time,
+        max_volunteers: event.max_volunteers,
+        image_url: event.image_url,
         organization_id: organizationId,
-        spots_filled: 0,
+        current_volunteers: 0,
         status: 'upcoming',
       });
     
@@ -138,12 +143,12 @@ export const useVolunteerEvents = () => {
       .eq('id', registrationId);
 
     if (!error) {
-      // Update spots_filled manually
+      // Update current_volunteers manually
       const event = events.find(e => e.id === eventId);
       if (event) {
         await supabase
           .from('volunteer_events')
-          .update({ spots_filled: event.spots_filled + 1 })
+          .update({ current_volunteers: event.current_volunteers + 1 })
           .eq('id', eventId);
       }
       await fetchEvents();
