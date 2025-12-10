@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Search, SlidersHorizontal, MapPin, PlusCircle } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
+import { useDonationListings } from "@/hooks/useDonationListings";
 
 const sampleItems: DonationItem[] = [
   {
@@ -144,15 +145,21 @@ const getTimeAgo = (dateString: string) => {
 };
 
 const Browse = () => {
-  const { donationListings, users } = useAuth();
+  const { users } = useAuth();
+  const { listings: donationListings, refresh } = useDonationListings();
   const [selectedCategory, setSelectedCategory] = useState("All");
   const [searchQuery, setSearchQuery] = useState("");
+
+  // Refresh listings when component mounts
+  useEffect(() => {
+    refresh();
+  }, []);
 
   // Convert user donation listings to DonationItem format
   const userListings: DonationItem[] = donationListings
     .filter(listing => listing.status === 'available')
     .map(listing => {
-      const donor = users.find(u => u.id === (listing.user_id || listing.userId));
+      const donor = users.find(u => u.id === listing.user_id);
       return {
         id: listing.id,
         title: listing.title,
@@ -161,9 +168,9 @@ const Browse = () => {
         category: listing.category,
         subcategory: listing.subcategory,
         durability: getConditionLabel(listing.condition),
-        location: listing.pickup_location || listing.pickupLocation || '',
+        location: listing.pickup_location || '',
         distance: "Nearby",
-        postedAt: getTimeAgo(listing.created_at || listing.createdAt || ''),
+        postedAt: getTimeAgo(listing.created_at || ''),
         views: Math.floor(Math.random() * 50) + 1,
       };
     });
