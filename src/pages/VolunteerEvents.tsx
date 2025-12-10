@@ -137,6 +137,7 @@ const VolunteerEvents = () => {
   const [registrations, setRegistrations] = useState<VolunteerRegistration[]>([]);
   const [selectedEvent, setSelectedEvent] = useState<VolunteerEvent | null>(null);
   const [isSignupDialogOpen, setIsSignupDialogOpen] = useState(false);
+  const [isMyRegistrationsOpen, setIsMyRegistrationsOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [signupSuccess, setSignupSuccess] = useState(false);
   const [formData, setFormData] = useState({
@@ -253,10 +254,25 @@ const VolunteerEvents = () => {
             <h1 className="text-4xl md:text-5xl font-bold text-foreground mb-4">
               Make a Difference
             </h1>
-            <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
+            <p className="text-xl text-muted-foreground max-w-2xl mx-auto mb-6">
               Join volunteer events organized by verified charity organizations. 
               Your time and effort can change lives.
             </p>
+            {user && (
+              <Button
+                variant="outline"
+                onClick={() => setIsMyRegistrationsOpen(true)}
+                className="gap-2"
+              >
+                <Hourglass className="w-4 h-4" />
+                My Registrations
+                {registrations.length > 0 && (
+                  <Badge variant="secondary" className="ml-1">
+                    {registrations.length}
+                  </Badge>
+                )}
+              </Button>
+            )}
           </div>
 
           {/* Stats */}
@@ -548,6 +564,61 @@ const VolunteerEvents = () => {
                 </Button>
               </DialogFooter>
             </form>
+          )}
+        </DialogContent>
+      </Dialog>
+
+      {/* My Registrations Dialog */}
+      <Dialog open={isMyRegistrationsOpen} onOpenChange={setIsMyRegistrationsOpen}>
+        <DialogContent className="max-w-lg max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Hourglass className="w-5 h-5" />
+              My Registrations
+            </DialogTitle>
+          </DialogHeader>
+          
+          {registrations.length === 0 ? (
+            <div className="text-center py-8">
+              <Users className="w-12 h-12 mx-auto mb-4 text-muted-foreground/50" />
+              <p className="text-muted-foreground">You haven't registered for any events yet.</p>
+              <p className="text-sm text-muted-foreground mt-1">Browse upcoming events and sign up to volunteer!</p>
+            </div>
+          ) : (
+            <div className="space-y-4">
+              {registrations.map((reg) => {
+                const event = events.find(e => e.id === reg.eventId);
+                return (
+                  <Card key={reg.id} className="p-4">
+                    <div className="flex items-start justify-between gap-4">
+                      <div className="flex-1 min-w-0">
+                        <h4 className="font-medium truncate">{event?.title || "Unknown Event"}</h4>
+                        <p className="text-sm text-muted-foreground">{event?.organizationName}</p>
+                        {event && (
+                          <div className="flex items-center gap-2 mt-2 text-sm text-muted-foreground">
+                            <Calendar className="w-3 h-3" />
+                            <span>{format(new Date(event.date), 'MMM d, yyyy')}</span>
+                            <Clock className="w-3 h-3 ml-2" />
+                            <span>{event.startTime}</span>
+                          </div>
+                        )}
+                      </div>
+                      <Badge 
+                        variant={
+                          reg.status === 'approved' ? 'default' : 
+                          reg.status === 'rejected' ? 'destructive' : 
+                          'secondary'
+                        }
+                      >
+                        {reg.status === 'approved' && <CheckCircle className="w-3 h-3 mr-1" />}
+                        {reg.status === 'pending' && <Hourglass className="w-3 h-3 mr-1" />}
+                        {reg.status.charAt(0).toUpperCase() + reg.status.slice(1)}
+                      </Badge>
+                    </div>
+                  </Card>
+                );
+              })}
+            </div>
           )}
         </DialogContent>
       </Dialog>
