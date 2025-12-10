@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -31,9 +32,10 @@ interface Campaign {
 }
 
 const Crowdfunding = () => {
-  const { organizations } = useAuth();
+  const { user, userRole, organizations } = useAuth();
   const { toast } = useToast();
   const { addNotification } = useNotifications();
+  const navigate = useNavigate();
   
   const [campaigns, setCampaigns] = useState<Campaign[]>([
     {
@@ -372,7 +374,29 @@ const Crowdfunding = () => {
                   Start a crowdfunding campaign to raise funds for your cause. 
                   Join our community of verified organizations making a difference in Singapore.
                 </p>
-                <Button size="lg" variant="secondary" className="font-semibold">
+                <Button 
+                  size="lg" 
+                  variant="secondary" 
+                  className="font-semibold"
+                  onClick={() => {
+                    if (!user) {
+                      toast({
+                        title: "Login Required",
+                        description: "Please log in or register as an organization to start a campaign.",
+                        variant: "destructive",
+                      });
+                      navigate('/auth');
+                    } else if (userRole === 'organization') {
+                      navigate('/organization/crowdfunding');
+                    } else {
+                      toast({
+                        title: "Organization Account Required",
+                        description: "Only verified organizations can create crowdfunding campaigns.",
+                        variant: "destructive",
+                      });
+                    }
+                  }}
+                >
                   Start a Campaign
                 </Button>
               </CardContent>
