@@ -107,16 +107,35 @@ export const useOrganizations = () => {
     acceptedSubcategories: string[], 
     rejectedSubcategories: string[]
   ) => {
-    const { error } = await supabase
-      .from('organization_subcategory_preferences')
-      .upsert({
-        organization_id: organizationId,
-        category,
-        accepted_subcategories: acceptedSubcategories,
-        rejected_subcategories: rejectedSubcategories,
-      }, {
-        onConflict: 'organization_id,category'
-      });
+    // Check if preference exists
+    const { data: existing } = await supabase
+      .from('subcategory_preferences')
+      .select('id')
+      .eq('organization_id', organizationId)
+      .eq('category', category)
+      .maybeSingle();
+
+    let error;
+    if (existing) {
+      const result = await supabase
+        .from('subcategory_preferences')
+        .update({
+          accepted_subcategories: acceptedSubcategories,
+          rejected_subcategories: rejectedSubcategories,
+        })
+        .eq('id', existing.id);
+      error = result.error;
+    } else {
+      const result = await supabase
+        .from('subcategory_preferences')
+        .insert({
+          organization_id: organizationId,
+          category,
+          accepted_subcategories: acceptedSubcategories,
+          rejected_subcategories: rejectedSubcategories,
+        });
+      error = result.error;
+    }
 
     if (!error) await fetchOrganizations();
     return { error };

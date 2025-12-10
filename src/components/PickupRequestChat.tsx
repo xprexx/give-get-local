@@ -94,17 +94,34 @@ export const PickupRequestChat = ({ requestId, donorId, requesterId }: PickupReq
     if (!newMessage.trim() || !user) return;
 
     setSending(true);
+    const messageText = newMessage.trim();
     const { error } = await (supabase
       .from('pickup_request_messages' as any)
       .insert({
         request_id: requestId,
         sender_id: user.id,
-        message: newMessage.trim()
+        message: messageText
       }) as any);
 
     if (!error) {
       setNewMessage("");
       fetchMessages();
+      
+      // Send notification to the other party
+      const recipientId = user.id === donorId ? requesterId : donorId;
+      const { data: senderProfile } = await supabase
+        .from('profiles')
+        .select('name')
+        .eq('id', user.id)
+        .single();
+      
+      await supabase.from('notifications').insert({
+        user_id: recipientId,
+        type: 'chat',
+        title: 'New Message',
+        message: `${senderProfile?.name || 'Someone'} sent you a message: "${messageText.substring(0, 50)}${messageText.length > 50 ? '...' : ''}"`,
+        link: user.id === donorId ? '/donor/pickup-requests' : '/browse',
+      });
     }
     setSending(false);
   };
