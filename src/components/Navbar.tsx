@@ -1,7 +1,7 @@
 import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Heart, Menu, X, LogOut, User, Building2, Shield, HandHeart, LayoutDashboard, PlusCircle } from "lucide-react";
+import { Heart, Menu, X, LogOut, User, Building2, Shield, HandHeart, LayoutDashboard, PlusCircle, Package } from "lucide-react";
 import { useState } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import NotificationDropdown from "@/components/NotificationDropdown";
@@ -45,6 +45,11 @@ const Navbar = () => {
             ) : (
               <Link to="/item-requests" className="text-muted-foreground hover:text-foreground transition-colors font-medium">
                 Item Requests
+              </Link>
+            )}
+            {user && (
+              <Link to="/donor/my-listings" className="text-muted-foreground hover:text-foreground transition-colors font-medium">
+                My Listings
               </Link>
             )}
             {user && (
@@ -132,6 +137,11 @@ const Navbar = () => {
               ) : (
                 <Link to="/item-requests" className="text-muted-foreground hover:text-foreground transition-colors font-medium py-2" onClick={() => setIsOpen(false)}>
                   Item Requests
+                </Link>
+              )}
+              {user && (
+                <Link to="/donor/my-listings" className="text-muted-foreground hover:text-foreground transition-colors font-medium py-2" onClick={() => setIsOpen(false)}>
+                  My Listings
                 </Link>
               )}
               {user && (

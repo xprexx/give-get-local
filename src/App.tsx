@@ -29,6 +29,7 @@ import OrganizationVolunteerEvents from "./pages/organization/VolunteerEvents";
 import OrganizationVolunteerApprovals from "./pages/organization/VolunteerApprovals";
 import BeneficiaryItemRequests from "./pages/beneficiary/ItemRequests";
 import DonorPickupRequests from "./pages/donor/PickupRequests";
+import DonorMyListings from "./pages/donor/MyListings";
 import Account from "./pages/Account";
 import NotFound from "./pages/NotFound";
 
@@ -128,6 +129,11 @@ const App = () => (
             <Route path="/donor/pickup-requests" element={
               <ProtectedRoute allowedRoles={['user', 'beneficiary', 'organization', 'admin']}>
                 <DonorPickupRequests />
+              </ProtectedRoute>
+            } />
+            <Route path="/donor/my-listings" element={
+              <ProtectedRoute allowedRoles={['user', 'beneficiary', 'organization', 'admin']}>
+                <DonorMyListings />
               </ProtectedRoute>
             } />
 
