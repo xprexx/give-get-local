@@ -40,19 +40,40 @@ export const usePickupRequests = () => {
       return;
     }
 
-    // Fetch pickup requests with related data
-    const { data, error } = await supabase
+    // Fetch pickup requests
+    const { data: pickupData, error } = await supabase
       .from('pickup_requests')
-      .select(`
-        *,
-        profiles:requester_id(name, email),
-        donation_listings:listing_id(id, title, user_id, images, pickup_location)
-      `)
+      .select('*')
       .order('created_at', { ascending: false });
 
-    if (!error && data) {
-      setRequests(data as unknown as PickupRequest[]);
+    if (error || !pickupData) {
+      setLoading(false);
+      return;
     }
+
+    // Fetch related profiles and listings
+    const requesterIds = [...new Set(pickupData.map(r => r.requester_id))];
+    const listingIds = [...new Set(pickupData.map(r => r.listing_id))];
+
+    const [profilesRes, listingsRes] = await Promise.all([
+      requesterIds.length > 0 
+        ? supabase.from('profiles').select('id, name, email').in('id', requesterIds)
+        : { data: [] },
+      listingIds.length > 0
+        ? supabase.from('donation_listings').select('id, title, user_id, images, pickup_location').in('id', listingIds)
+        : { data: [] }
+    ]);
+
+    const profilesMap = new Map((profilesRes.data || []).map(p => [p.id, p]));
+    const listingsMap = new Map((listingsRes.data || []).map(l => [l.id, l]));
+
+    const enrichedRequests = pickupData.map(req => ({
+      ...req,
+      profiles: profilesMap.get(req.requester_id),
+      donation_listings: listingsMap.get(req.listing_id)
+    }));
+
+    setRequests(enrichedRequests as unknown as PickupRequest[]);
     setLoading(false);
   };
 
