@@ -643,16 +643,17 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   // Donation listing functions
   const createDonationListing = async (listing: Partial<DonationListing> & { title: string; description: string; category: string; condition: string }) => {
     if (!authUser) return;
-    await supabase.from('donation_listings').insert({
+    const insertData = {
       title: listing.title,
       description: listing.description,
       category: listing.category,
-      subcategory: listing.subcategory,
-      condition: listing.condition,
+      subcategory: listing.subcategory || null,
+      condition: listing.condition as 'new' | 'like_new' | 'good' | 'fair',
       images: listing.images || [],
       pickup_location: listing.pickup_location || listing.pickupLocation || '',
       user_id: authUser.id,
-    });
+    };
+    await supabase.from('donation_listings').insert(insertData);
     await fetchDonationListings();
   };
 
