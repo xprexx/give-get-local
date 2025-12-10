@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -6,17 +6,19 @@ import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { useAuth, ItemRequest } from "@/contexts/AuthContext";
+import { useAuth } from "@/contexts/AuthContext";
+import { useItemRequests, ItemRequest } from "@/hooks/useItemRequests";
 import { useToast } from "@/hooks/use-toast";
 import { Heart, Plus, ArrowLeft, MapPin, Calendar, Trash2, Edit, AlertTriangle, Clock, CheckCircle, XCircle, Info, Search, Filter } from "lucide-react";
 import { format } from "date-fns";
 
 const BeneficiaryItemRequests = () => {
-  const { user, itemRequests, categories, users, submitItemRequest, updateItemRequest, deleteItemRequest } = useAuth();
+  const { user, categories, users } = useAuth();
+  const { requests: itemRequests, loading, createRequest, updateRequest, deleteRequest, refresh } = useItemRequests();
   const { toast } = useToast();
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingRequest, setEditingRequest] = useState<ItemRequest | null>(null);
@@ -33,11 +35,11 @@ const BeneficiaryItemRequests = () => {
     urgency: "medium" as "low" | "medium" | "high",
   });
 
-  const myRequests = itemRequests.filter(req => req.userId === user?.id);
+  const myRequests = itemRequests.filter(req => req.user_id === user?.id);
   
   // Community requests - only approved and active from other beneficiaries
   const communityRequests = itemRequests.filter(req => 
-    req.status === 'active' && req.moderationStatus === 'approved' && req.userId !== user?.id
+    req.status === 'active' && req.moderation_status === 'approved' && req.user_id !== user?.id
   );
 
   const filteredCommunityRequests = communityRequests.filter(req => {
@@ -52,7 +54,7 @@ const BeneficiaryItemRequests = () => {
     return reqUser?.name || "Anonymous";
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
     const categoryValue = useCustomCategory ? formData.customCategory : formData.category;
@@ -70,19 +72,19 @@ const BeneficiaryItemRequests = () => {
       title: formData.title,
       description: formData.description,
       category: categoryValue,
-      isCustomCategory: useCustomCategory,
+      is_custom_category: useCustomCategory,
       location: formData.location,
       urgency: formData.urgency,
     };
 
     if (editingRequest) {
-      updateItemRequest(editingRequest.id, requestData);
+      await updateRequest(editingRequest.id, requestData);
       toast({
         title: "Request Updated",
         description: "Your item request has been updated successfully.",
       });
     } else {
-      submitItemRequest(requestData);
+      await createRequest(requestData);
       const message = useCustomCategory
         ? "Your request has been submitted and is pending admin approval since it uses a custom category."
         : "Your item request has been posted. Donors will be able to see it.";
@@ -98,30 +100,30 @@ const BeneficiaryItemRequests = () => {
     setIsDialogOpen(false);
   };
 
-  const handleEdit = (request: ItemRequest) => {
+  const handleEdit = (request: any) => {
     setEditingRequest(request);
-    setUseCustomCategory(request.isCustomCategory);
+    setUseCustomCategory(request.is_custom_category);
     setFormData({
       title: request.title,
       description: request.description,
-      category: request.isCustomCategory ? "" : request.category,
-      customCategory: request.isCustomCategory ? request.category : "",
+      category: request.is_custom_category ? "" : request.category,
+      customCategory: request.is_custom_category ? request.category : "",
       location: request.location,
       urgency: request.urgency,
     });
     setIsDialogOpen(true);
   };
 
-  const handleDelete = (requestId: string) => {
-    deleteItemRequest(requestId);
+  const handleDelete = async (requestId: string) => {
+    await deleteRequest(requestId);
     toast({
       title: "Request Deleted",
       description: "Your item request has been removed.",
     });
   };
 
-  const getModerationBadge = (request: ItemRequest) => {
-    switch (request.moderationStatus) {
+  const getModerationBadge = (request: any) => {
+    switch (request.moderation_status) {
       case 'pending': return <Badge variant="secondary" className="gap-1"><Clock className="w-3 h-3" />Pending Review</Badge>;
       case 'approved': return <Badge variant="success" className="gap-1"><CheckCircle className="w-3 h-3" />Approved</Badge>;
       case 'rejected': return <Badge variant="destructive" className="gap-1"><XCircle className="w-3 h-3" />Rejected</Badge>;
@@ -369,13 +371,13 @@ const BeneficiaryItemRequests = () => {
                         </div>
                         <div className="flex items-center gap-1">
                           <Calendar className="w-4 h-4" />
-                          <span>{format(new Date(request.createdAt), 'MMM d, yyyy')}</span>
+                          <span>{format(new Date(request.created_at), 'MMM d, yyyy')}</span>
                         </div>
                       </div>
 
                       <div className="pt-2 border-t border-border">
                         <p className="text-sm text-muted-foreground">
-                          Requested by: <span className="font-medium text-foreground">{getRequesterName(request.userId)}</span>
+                          Requested by: <span className="font-medium text-foreground">{getRequesterName(request.user_id)}</span>
                         </p>
                       </div>
 
@@ -423,7 +425,7 @@ const BeneficiaryItemRequests = () => {
                           {request.urgency === 'high' ? 'Urgent' : request.urgency === 'medium' ? 'Moderate' : 'Low'}
                         </Badge>
                         <Badge variant="outline">{request.category}</Badge>
-                        {request.isCustomCategory && (
+                        {request.is_custom_category && (
                           <Badge variant="secondary">Custom</Badge>
                         )}
                       </div>
@@ -433,11 +435,11 @@ const BeneficiaryItemRequests = () => {
                         {request.description}
                       </p>
 
-                      {request.moderationStatus === 'rejected' && request.moderationNote && (
+                      {request.moderation_status === 'rejected' && request.moderation_note && (
                         <Alert variant="destructive">
                           <XCircle className="h-4 w-4" />
                           <AlertDescription>
-                            <strong>Rejection reason:</strong> {request.moderationNote}
+                            <strong>Rejection reason:</strong> {request.moderation_note}
                           </AlertDescription>
                         </Alert>
                       )}
@@ -449,7 +451,7 @@ const BeneficiaryItemRequests = () => {
                         </div>
                         <div className="flex items-center gap-1">
                           <Calendar className="w-4 h-4" />
-                          <span>{format(new Date(request.createdAt), 'MMM d, yyyy')}</span>
+                          <span>{format(new Date(request.created_at), 'MMM d, yyyy')}</span>
                         </div>
                       </div>
                     </CardContent>

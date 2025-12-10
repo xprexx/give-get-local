@@ -5,10 +5,11 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from "@/components/ui/dialog";
 import { MapPin, Clock, Eye, CheckCircle, MessageSquare, Calendar } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
+import { usePickupRequests } from "@/hooks/usePickupRequests";
 
 export interface DonationItem {
   id: string;
@@ -22,7 +23,7 @@ export interface DonationItem {
   distance: string;
   postedAt: string;
   views: number;
-  donorId?: string;
+  donorId?: string; // The owner of the listing
 }
 
 interface DonationCardProps {
@@ -32,6 +33,7 @@ interface DonationCardProps {
 const DonationCard = ({ item }: DonationCardProps) => {
   const { toast } = useToast();
   const { user } = useAuth();
+  const { createRequest } = usePickupRequests();
   const [isRequestDialogOpen, setIsRequestDialogOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [requestSuccess, setRequestSuccess] = useState(false);
@@ -46,7 +48,28 @@ const DonationCard = ({ item }: DonationCardProps) => {
     message: "",
   });
 
+  // Check if user owns this item (prevent self-requesting)
+  const isOwnItem = user && item.donorId === user.id;
+
   const handleRequestPickup = () => {
+    if (!user) {
+      toast({
+        title: "Login Required",
+        description: "Please log in to request a pickup.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (isOwnItem) {
+      toast({
+        title: "Cannot Request Own Item",
+        description: "You cannot request pickup for your own donation.",
+        variant: "destructive",
+      });
+      return;
+    }
+
     setRequestSuccess(false);
     setFormData({
       name: user?.name || "",
@@ -75,10 +98,27 @@ const DonationCard = ({ item }: DonationCardProps) => {
 
     setIsSubmitting(true);
 
-    // Simulate API call
-    await new Promise(resolve => setTimeout(resolve, 1500));
+    // Save to Supabase
+    const { error } = await createRequest({
+      listing_id: item.id,
+      preferred_date: formData.preferredDate,
+      preferred_time: formData.preferredTime,
+      alternative_date: formData.alternativeDate || undefined,
+      alternative_time: formData.alternativeTime || undefined,
+      message: formData.message || undefined,
+    });
 
     setIsSubmitting(false);
+
+    if (error) {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to send pickup request. Please try again.",
+        variant: "destructive",
+      });
+      return;
+    }
+
     setRequestSuccess(true);
     
     toast({
@@ -112,6 +152,11 @@ const DonationCard = ({ item }: DonationCardProps) => {
               {item.durability}
             </Badge>
           </div>
+          {isOwnItem && (
+            <div className="absolute bottom-3 left-3">
+              <Badge variant="secondary">Your Listing</Badge>
+            </div>
+          )}
         </div>
         
         <CardContent className="pt-4">
@@ -139,9 +184,15 @@ const DonationCard = ({ item }: DonationCardProps) => {
         </CardContent>
         
         <CardFooter className="pt-0">
-          <Button variant="default" className="w-full" onClick={handleRequestPickup}>
-            Request Pickup
-          </Button>
+          {isOwnItem ? (
+            <Button variant="outline" className="w-full" disabled>
+              Your Listing
+            </Button>
+          ) : (
+            <Button variant="default" className="w-full" onClick={handleRequestPickup}>
+              Request Pickup
+            </Button>
+          )}
         </CardFooter>
       </Card>
 
@@ -152,6 +203,11 @@ const DonationCard = ({ item }: DonationCardProps) => {
             <DialogTitle>
               {requestSuccess ? "Request Sent!" : `Request Pickup: ${item.title}`}
             </DialogTitle>
+            <DialogDescription>
+              {requestSuccess 
+                ? "Your pickup request has been submitted successfully." 
+                : "Fill out the form below to request a pickup for this item."}
+            </DialogDescription>
           </DialogHeader>
           
           {requestSuccess ? (

@@ -1,3 +1,4 @@
+import { useEffect } from "react";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -6,18 +7,25 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { MapPin, Calendar, Heart, Search, Filter } from "lucide-react";
-import { useAuth, ItemRequest } from "@/contexts/AuthContext";
+import { useAuth } from "@/contexts/AuthContext";
+import { useItemRequests } from "@/hooks/useItemRequests";
 import { useState } from "react";
 import { format } from "date-fns";
 
 const ItemRequests = () => {
-  const { itemRequests, categories, users } = useAuth();
+  const { categories, users } = useAuth();
+  const { requests: itemRequests, refresh } = useItemRequests();
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCategory, setSelectedCategory] = useState<string>("all");
 
+  // Refresh on mount
+  useEffect(() => {
+    refresh();
+  }, []);
+
   // Only show approved and active requests publicly
   const activeRequests = itemRequests.filter(req => 
-    req.status === 'active' && req.moderationStatus === 'approved'
+    req.status === 'active' && req.moderation_status === 'approved'
   );
 
   const filteredRequests = activeRequests.filter(req => {
@@ -127,13 +135,13 @@ const ItemRequests = () => {
                       </div>
                       <div className="flex items-center gap-1">
                         <Calendar className="w-4 h-4" />
-                        <span>{format(new Date(request.createdAt), 'MMM d, yyyy')}</span>
+                        <span>{format(new Date(request.created_at), 'MMM d, yyyy')}</span>
                       </div>
                     </div>
 
                     <div className="pt-2 border-t border-border">
                       <p className="text-sm text-muted-foreground">
-                        Requested by: <span className="font-medium text-foreground">{getRequesterName(request.userId)}</span>
+                        Requested by: <span className="font-medium text-foreground">{getRequesterName(request.user_id)}</span>
                       </p>
                     </div>
 
