@@ -51,90 +51,25 @@ const VolunteerEvents = () => {
   const { toast } = useToast();
   const { addNotification } = useNotifications();
   const navigate = useNavigate();
-  const { registerForEvent, fetchMyRegistrations } = useVolunteerEvents();
+  const { events: dbEvents, loading: eventsLoading, registerForEvent, fetchMyRegistrations } = useVolunteerEvents();
 
-  const [events, setEvents] = useState<VolunteerEvent[]>([
-    {
-      id: "1",
-      organizationId: "org-1",
-      organizationName: "Willing Hearts Singapore",
-      title: "Weekend Meal Preparation",
-      description: "Help prepare and pack meals for elderly and low-income families. No cooking experience required!",
-      location: "8 Lorong 8 Toa Payoh, Singapore 319254",
-      date: "2024-12-21",
-      startTime: "08:00",
-      endTime: "12:00",
-      spotsTotal: 30,
-      spotsFilled: 22,
-      image: "https://images.unsplash.com/photo-1556909114-f6e7ad7d3136?w=600&h=400&fit=crop",
-      status: "upcoming" as const,
-      requirements: ["Bring own apron", "Comfortable shoes"],
-    },
-    {
-      id: "2",
-      organizationId: "org-2",
-      organizationName: "SPCA Singapore",
-      title: "Animal Shelter Cleaning Day",
-      description: "Help clean and maintain our animal shelter. Interact with rescued animals and make their day brighter!",
-      location: "50 Sungei Tengah Road, Singapore 699012",
-      date: "2024-12-22",
-      startTime: "09:00",
-      endTime: "13:00",
-      spotsTotal: 20,
-      spotsFilled: 15,
-      image: "https://images.unsplash.com/photo-1601758124096-1fd661873b95?w=600&h=400&fit=crop",
-      status: "upcoming" as const,
-      requirements: ["Wear old clothes", "Must love animals"],
-    },
-    {
-      id: "3",
-      organizationId: "org-3",
-      organizationName: "MINDS Singapore",
-      title: "Art Therapy Session Support",
-      description: "Assist our therapists in running art therapy sessions for persons with intellectual disabilities.",
-      location: "MINDS Towner Gardens, 6 Lengkok Bahru, Singapore 159051",
-      date: "2024-12-28",
-      startTime: "14:00",
-      endTime: "17:00",
-      spotsTotal: 10,
-      spotsFilled: 6,
-      image: "https://images.unsplash.com/photo-1522202176988-66273c2fd55f?w=600&h=400&fit=crop",
-      status: "upcoming" as const,
-      requirements: ["Prior volunteer experience preferred", "Patient and compassionate"],
-    },
-    {
-      id: "4",
-      organizationId: "org-4",
-      organizationName: "Salvation Army Singapore",
-      title: "Donation Sorting Marathon",
-      description: "Help sort, clean, and organize donated items at our distribution center.",
-      location: "20 Bishan Street 22, Singapore 579768",
-      date: "2025-01-04",
-      startTime: "10:00",
-      endTime: "16:00",
-      spotsTotal: 50,
-      spotsFilled: 28,
-      image: "https://images.unsplash.com/photo-1532629345422-7515f3d16bb6?w=600&h=400&fit=crop",
-      status: "upcoming" as const,
-      requirements: ["Comfortable lifting boxes", "Lunch will be provided"],
-    },
-    {
-      id: "5",
-      organizationId: "org-1",
-      organizationName: "Willing Hearts Singapore",
-      title: "Christmas Meal Distribution",
-      description: "Special Christmas event to distribute festive meals to beneficiaries across Singapore.",
-      location: "Various locations island-wide",
-      date: "2024-12-25",
-      startTime: "10:00",
-      endTime: "14:00",
-      spotsTotal: 100,
-      spotsFilled: 100,
-      image: "https://images.unsplash.com/photo-1513885535751-8b9238bd345a?w=600&h=400&fit=crop",
-      status: "full" as const,
-      requirements: ["Own transport preferred", "Festive spirit!"],
-    },
-  ]);
+  // Map database events to component interface
+  const events: VolunteerEvent[] = dbEvents.map(e => ({
+    id: e.id,
+    organizationId: e.organization_id,
+    organizationName: e.organizations?.name || 'Unknown Organization',
+    title: e.title,
+    description: e.description,
+    location: e.location,
+    date: e.event_date,
+    startTime: e.event_time,
+    endTime: e.event_time, // DB doesn't have end time
+    spotsTotal: e.max_volunteers,
+    spotsFilled: e.current_volunteers,
+    image: e.image_url || "https://images.unsplash.com/photo-1559027615-cd4628902d4a?w=600&h=400&fit=crop",
+    status: (e.current_volunteers >= e.max_volunteers ? 'full' : 'upcoming') as 'upcoming' | 'full',
+    requirements: [],
+  }));
 
   const [registrations, setRegistrations] = useState<VolunteerRegistration[]>([]);
   const [selectedEvent, setSelectedEvent] = useState<VolunteerEvent | null>(null);
@@ -351,6 +286,18 @@ const VolunteerEvents = () => {
           {/* Upcoming Events */}
           <section className="mb-16">
             <h2 className="text-2xl font-bold mb-6">Upcoming Events</h2>
+            {eventsLoading ? (
+              <div className="text-center py-12">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
+                <p className="text-muted-foreground">Loading events...</p>
+              </div>
+            ) : upcomingEvents.length === 0 ? (
+              <div className="text-center py-12">
+                <Calendar className="w-12 h-12 mx-auto mb-4 text-muted-foreground/50" />
+                <p className="text-muted-foreground">No upcoming events at the moment.</p>
+                <p className="text-sm text-muted-foreground mt-1">Check back soon for new volunteer opportunities!</p>
+              </div>
+            ) : (
             <div className="grid md:grid-cols-2 gap-6">
               {upcomingEvents.map((event) => (
                 <Card key={event.id} className="overflow-hidden group hover:-translate-y-1 transition-all duration-300">
@@ -415,6 +362,7 @@ const VolunteerEvents = () => {
                 </Card>
               ))}
             </div>
+            )}
           </section>
 
           {/* Full Events */}
