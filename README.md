@@ -1,73 +1,54 @@
-# Welcome to your Lovable project
+# GiveLocal SG
 
-## Project info
+**GiveLocal SG solves the donation disconnect.** Our verified, request-based marketplace matches household surplus to real community needs, streamlining logistics and eliminating waste.
 
-**URL**: https://lovable.dev/projects/REPLACE_WITH_PROJECT_ID
+## Inspiration
 
-## How can I edit this code?
+The inspiration for our project came from a practical problem faced by one of our team members. He had a large amount of unused clothing at home but no clear or convenient way to donate it. This highlighted a broader issue: many people want to give away usable items but lack a centralised platform to guide them on where and how to donate. From this starting point, the concept of a unified donation app emerged.
 
-There are several ways of editing your application.
+## What It Does
 
-**Use Lovable**
+GiveLocal provides a centralised ecosystem for charitable contributions, enabling users to:
 
-Simply visit the [Lovable Project](https://lovable.dev/projects/REPLACE_WITH_PROJECT_ID) and start prompting.
+- **Donate unused items** – List items you no longer need for others to claim
+- **Browse available donations** – Find items listed by other community members
+- **Request specific items** – Verified beneficiaries can post item requests based on their needs
+- **Support bulk donations** – Individuals and groups can give in larger quantities with minimal friction
+- **Volunteer for events** – Sign up for volunteer opportunities hosted by verified organizations
+- **Contribute to crowdfunding campaigns** – Support community causes financially
 
-Changes made via Lovable will be committed automatically to this repo.
+Beneficiary organizations can create verified accounts to post item requests, ensuring transparency and relevance in what they accept.
 
-**Use your preferred IDE**
+## Tech Stack
 
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
+- **Frontend**: React 18 with TypeScript
+- **Build Tool**: Vite
+- **Styling**: Tailwind CSS with shadcn/ui components
+- **Backend**: Supabase (PostgreSQL database, authentication, edge functions, real-time subscriptions)
+- **State Management**: TanStack React Query
+- **Routing**: React Router v6
+- **Mobile**: Capacitor for native mobile builds
 
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
+## Challenges We Ran Into
 
-Follow these steps:
+We faced several challenges during development, particularly when deciding which features to include. We resolved these discussions by presenting our viewpoints, evaluating their impact, and making decisions through majority vote.
 
-```sh
-# Step 1: Clone the repository using the project's Git URL.
-git clone <YOUR_GIT_URL>
+At various points, we also encountered UI/UX issues. Our initial designs did not feel intuitive during testing. To address this, we sought feedback from friends and family, representing potential users of the app. Their insights helped us refine the interface and improve the overall user experience.
 
-# Step 2: Navigate to the project directory.
-cd <YOUR_PROJECT_NAME>
+## Accomplishments
 
-# Step 3: Install the necessary dependencies.
-npm i
+We are proud to have built a fully functioning demo application within the hackathon timeframe. Our web app features a clean, appealing layout and resembles a production-ready platform suitable for real-world use. The system is also designed with scalability in mind, giving us the foundation to further develop it into a fully deployed application.
 
-# Step 4: Start the development server with auto-reloading and an instant preview.
-npm run dev
-```
+## What We Learned
 
-**Edit a file directly in GitHub**
+We learned that developing a full-stack, fully functioning web application requires significant time, effort, and careful planning. Beyond building features, we must consider what user data needs to be stored, how it should be structured, and how to ensure proper data security.
 
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
+We also realized that user experience plays an essential role. Every detail, from button placement to page flow, influences how well the idea is executed. Without thoughtful UX design, even a good concept can fail to deliver its intended impact.
 
-**Use GitHub Codespaces**
+## What's Next
 
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
+We believe this app has strong potential to be used by people across Singapore. Our long-term plan is to develop a mobile version and refine the platform for real-world deployment.
 
-## What technologies are used for this project?
+---
 
-This project is built with:
-
-- Vite
-- TypeScript
-- React
-- shadcn-ui
-- Tailwind CSS
-
-## How can I deploy this project?
-
-Simply open [Lovable](https://lovable.dev/projects/REPLACE_WITH_PROJECT_ID) and click on Share -> Publish.
-
-## Can I connect a custom domain to my Lovable project?
-
-Yes, you can!
-
-To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
-
-Read more here: [Setting up a custom domain](https://docs.lovable.dev/features/custom-domain#custom-domain)
+*Built with [Lovable](https://lovable.dev)*
