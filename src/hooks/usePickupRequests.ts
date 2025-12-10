@@ -20,8 +20,11 @@ export interface PickupRequest {
     email: string;
   };
   donation_listings?: {
+    id: string;
     title: string;
     user_id: string;
+    images: string[] | null;
+    pickup_location: string;
   };
 }
 
@@ -30,9 +33,21 @@ export const usePickupRequests = () => {
   const [loading, setLoading] = useState(true);
 
   const fetchRequests = async () => {
+    setLoading(true);
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) {
+      setLoading(false);
+      return;
+    }
+
+    // Fetch pickup requests with related data
     const { data, error } = await supabase
       .from('pickup_requests')
-      .select('*')
+      .select(`
+        *,
+        profiles:requester_id(name, email),
+        donation_listings:listing_id(id, title, user_id, images, pickup_location)
+      `)
       .order('created_at', { ascending: false });
 
     if (!error && data) {
@@ -45,14 +60,19 @@ export const usePickupRequests = () => {
     fetchRequests();
   }, []);
 
-  const createRequest = async (request: Omit<PickupRequest, 'id' | 'requester_id' | 'status' | 'created_at' | 'updated_at'>) => {
+  const createRequest = async (request: Omit<PickupRequest, 'id' | 'requester_id' | 'status' | 'created_at' | 'updated_at' | 'profiles' | 'donation_listings'>) => {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return { error: { message: 'Not authenticated' } };
 
     const { error } = await supabase
       .from('pickup_requests')
       .insert({
-        ...request,
+        listing_id: request.listing_id,
+        preferred_date: request.preferred_date,
+        preferred_time: request.preferred_time,
+        alternative_date: request.alternative_date || null,
+        alternative_time: request.alternative_time || null,
+        message: request.message || null,
         requester_id: user.id,
         status: 'pending',
       });
@@ -61,7 +81,7 @@ export const usePickupRequests = () => {
     return { error };
   };
 
-  const updateRequest = async (id: string, updates: Partial<PickupRequest>) => {
+  const updateRequest = async (id: string, updates: Partial<Pick<PickupRequest, 'status' | 'response_message'>>) => {
     const { error } = await supabase
       .from('pickup_requests')
       .update(updates)
