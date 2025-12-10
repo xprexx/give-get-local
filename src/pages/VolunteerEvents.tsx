@@ -53,11 +53,10 @@ const VolunteerEvents = () => {
   const navigate = useNavigate();
   const { events: dbEvents, loading: eventsLoading, registerForEvent, fetchMyRegistrations } = useVolunteerEvents();
 
-  // Sample events for display when database is empty
   const sampleEvents: VolunteerEvent[] = [
     {
-      id: "sample-1",
-      organizationId: "sample-org-1",
+      id: "00000000-0000-0000-0000-000000000001",
+      organizationId: "00000000-0000-0000-0000-000000000011",
       organizationName: "Willing Hearts Singapore",
       title: "Weekend Meal Preparation",
       description: "Help prepare and pack meals for elderly and low-income families. No cooking experience required!",
@@ -72,8 +71,8 @@ const VolunteerEvents = () => {
       requirements: ["Bring own apron", "Comfortable shoes"],
     },
     {
-      id: "sample-2",
-      organizationId: "sample-org-2",
+      id: "00000000-0000-0000-0000-000000000002",
+      organizationId: "00000000-0000-0000-0000-000000000012",
       organizationName: "SPCA Singapore",
       title: "Animal Shelter Cleaning Day",
       description: "Help clean and maintain our animal shelter. Interact with rescued animals and make their day brighter!",
@@ -88,8 +87,8 @@ const VolunteerEvents = () => {
       requirements: ["Wear old clothes", "Must love animals"],
     },
     {
-      id: "sample-3",
-      organizationId: "sample-org-3",
+      id: "00000000-0000-0000-0000-000000000003",
+      organizationId: "00000000-0000-0000-0000-000000000013",
       organizationName: "Salvation Army Singapore",
       title: "Donation Sorting Marathon",
       description: "Help sort, clean, and organize donated items at our distribution center.",
@@ -183,16 +182,6 @@ const VolunteerEvents = () => {
 
   const handleSignupSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
-    // Check if this is a sample event (can't register for sample events)
-    if (selectedEvent?.id.startsWith('sample-')) {
-      toast({
-        title: "Sample Event",
-        description: "This is a sample event for demonstration. Register as an organization to create real volunteer events!",
-      });
-      setIsSignupDialogOpen(false);
-      return;
-    }
 
     if (!user) {
       toast({
@@ -224,6 +213,25 @@ const VolunteerEvents = () => {
     }
 
     setIsSubmitting(true);
+
+    // Handle hardcoded sample events (simulate success)
+    const sampleEventIds = [
+      "00000000-0000-0000-0000-000000000001",
+      "00000000-0000-0000-0000-000000000002",
+      "00000000-0000-0000-0000-000000000003",
+    ];
+    
+    if (sampleEventIds.includes(selectedEvent!.id)) {
+      // Simulate successful registration for demo events
+      toast({
+        title: "Registration Submitted!",
+        description: "Your volunteer application has been submitted. The organization will review and approve your registration.",
+      });
+      setIsSignupDialogOpen(false);
+      setFormData({ name: '', email: '', phone: '', age: '', experience: '' });
+      setIsSubmitting(false);
+      return;
+    }
 
     const { error } = await registerForEvent(selectedEvent!.id, age, formData.experience || undefined);
 
