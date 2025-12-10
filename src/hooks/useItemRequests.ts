@@ -28,10 +28,15 @@ export const useItemRequests = () => {
 
   const fetchRequests = async () => {
     setLoading(true);
+    const { data: { user } } = await supabase.auth.getUser();
+    console.log('Fetching item requests for user:', user?.id);
+    
     const { data, error } = await supabase
       .from('item_requests')
       .select('*')
       .order('created_at', { ascending: false });
+
+    console.log('Item requests fetched:', { data, error });
 
     if (!error && data) {
       // Fetch related profiles
@@ -47,7 +52,10 @@ export const useItemRequests = () => {
         profiles: profilesMap.get(req.user_id)
       }));
       
+      console.log('Enriched item requests:', enrichedRequests);
       setRequests(enrichedRequests as unknown as ItemRequest[]);
+    } else if (error) {
+      console.error('Failed to fetch item requests:', error);
     }
     setLoading(false);
   };
@@ -59,6 +67,19 @@ export const useItemRequests = () => {
   const createRequest = async (request: Omit<ItemRequest, 'id' | 'user_id' | 'status' | 'moderation_status' | 'created_at' | 'updated_at'>) => {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return { error: { message: 'Not authenticated' } };
+
+    // Check if user is a beneficiary (required by RLS policy)
+    const { data: roleData } = await supabase
+      .from('user_roles')
+      .select('role')
+      .eq('user_id', user.id)
+      .maybeSingle();
+    
+    console.log('User role for item request:', roleData);
+    
+    if (roleData?.role !== 'beneficiary' && roleData?.role !== 'admin') {
+      return { error: { message: 'Only beneficiaries can create item requests. Please update your account type.' } };
+    }
 
     // Fetch categories to check if custom
     const { data: categories } = await supabase
@@ -76,6 +97,8 @@ export const useItemRequests = () => {
         status: 'active',
         moderation_status: isApprovedCategory ? 'approved' : 'pending',
       });
+    
+    console.log('Item request insert result:', { error });
     
     if (!error) await fetchRequests();
     return { error };

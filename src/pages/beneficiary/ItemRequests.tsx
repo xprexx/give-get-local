@@ -26,6 +26,11 @@ const BeneficiaryItemRequests = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCategory, setSelectedCategory] = useState<string>("all");
 
+  // Refresh data on mount
+  useEffect(() => {
+    refresh();
+  }, []);
+
   const [formData, setFormData] = useState({
     title: "",
     description: "",
@@ -78,13 +83,29 @@ const BeneficiaryItemRequests = () => {
     };
 
     if (editingRequest) {
-      await updateRequest(editingRequest.id, requestData);
+      const { error } = await updateRequest(editingRequest.id, requestData);
+      if (error) {
+        toast({
+          title: "Error",
+          description: error.message || "Failed to update request",
+          variant: "destructive",
+        });
+        return;
+      }
       toast({
         title: "Request Updated",
         description: "Your item request has been updated successfully.",
       });
     } else {
-      await createRequest(requestData);
+      const { error } = await createRequest(requestData);
+      if (error) {
+        toast({
+          title: "Error",
+          description: error.message || "Failed to create request",
+          variant: "destructive",
+        });
+        return;
+      }
       const message = useCustomCategory
         ? "Your request has been submitted and is pending admin approval since it uses a custom category."
         : "Your item request has been posted. Donors will be able to see it.";
