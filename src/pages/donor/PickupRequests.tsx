@@ -9,6 +9,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { useAuth } from "@/contexts/AuthContext";
 import { usePickupRequests, PickupRequest } from "@/hooks/usePickupRequests";
 import { useToast } from "@/hooks/use-toast";
+import { PickupRequestChat } from "@/components/PickupRequestChat";
 import { 
   Heart, ArrowLeft, MapPin, Calendar, Clock, MessageSquare, 
   CheckCircle, XCircle, Package, User
@@ -170,7 +171,7 @@ const RequestDetailPanel = ({ request, mode, onAccept, onReject, onComplete }: {
         )}
       </CardHeader>
 
-      <CardContent className="p-4">
+      <CardContent className="p-4 space-y-4">
         <div className="space-y-2">
           <h4 className="font-medium">{mode === "incoming" ? "Contact Information" : "Pickup Location"}</h4>
           {mode === "incoming" ? (
@@ -182,6 +183,15 @@ const RequestDetailPanel = ({ request, mode, onAccept, onReject, onComplete }: {
             <p className="text-sm text-muted-foreground"><strong>Location:</strong> {request.donation_listings?.pickup_location}</p>
           )}
         </div>
+
+        {/* Chat section for pending and active requests */}
+        {(request.status === "pending" || request.status === "accepted") && (
+          <PickupRequestChat
+            requestId={request.id}
+            donorId={request.donation_listings?.user_id || ""}
+            requesterId={request.requester_id}
+          />
+        )}
       </CardContent>
     </Card>
   );
