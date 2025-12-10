@@ -16,6 +16,7 @@ export interface DonationItem {
   description: string;
   image: string;
   category: string;
+  subcategory?: string;
   durability: string;
   location: string;
   distance: string;
@@ -100,8 +101,11 @@ const DonationCard = ({ item }: DonationCardProps) => {
             alt={item.title}
             className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
           />
-          <div className="absolute top-3 left-3">
+          <div className="absolute top-3 left-3 flex gap-1 flex-wrap">
             <Badge variant="success">{item.category}</Badge>
+            {item.subcategory && (
+              <Badge variant="secondary">{item.subcategory}</Badge>
+            )}
           </div>
           <div className="absolute top-3 right-3">
             <Badge variant="outline" className="bg-background/80 backdrop-blur-sm">
