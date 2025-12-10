@@ -158,6 +158,7 @@ const Browse = () => {
         description: listing.description,
         image: listing.images[0] || "https://images.unsplash.com/photo-1560472354-b33ff0c44a43?w=600&h=450&fit=crop",
         category: listing.category,
+        subcategory: listing.subcategory,
         durability: getConditionLabel(listing.condition),
         location: listing.pickupLocation,
         distance: "Nearby",
