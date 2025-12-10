@@ -5,7 +5,8 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Search, MapPin, CheckCircle2, XCircle, Package, Building2, Clock } from "lucide-react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
+import { Search, MapPin, CheckCircle2, XCircle, Package, Building2, Clock, Mail, Phone, Globe } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 
 interface DisplayOrganization {
@@ -19,6 +20,9 @@ interface DisplayOrganization {
   notAccepting: string[];
   itemsNeeded: number;
   verified: boolean;
+  email?: string;
+  phone?: string;
+  website?: string;
 }
 
 // Seed organizations - verified Singapore charities
@@ -34,6 +38,9 @@ const seedOrganizations: DisplayOrganization[] = [
     notAccepting: ["Mattresses", "Large furniture", "Expired items"],
     itemsNeeded: 320,
     verified: true,
+    email: "donors@salvationarmy.org.sg",
+    phone: "+65 6555 0188",
+    website: "https://www.salvationarmy.org.sg",
   },
   {
     id: "seed-2",
@@ -46,6 +53,9 @@ const seedOrganizations: DisplayOrganization[] = [
     notAccepting: ["Clothing", "Electronics", "Furniture"],
     itemsNeeded: 156,
     verified: true,
+    email: "info@willinghearts.org.sg",
+    phone: "+65 6444 5855",
+    website: "https://www.willinghearts.org.sg",
   },
   {
     id: "seed-3",
@@ -58,6 +68,8 @@ const seedOrganizations: DisplayOrganization[] = [
     notAccepting: ["Adult items", "Electronics", "Used textbooks"],
     itemsNeeded: 234,
     verified: true,
+    email: "hello@blessingsinabag.co",
+    website: "https://www.blessingsinabag.co",
   },
   {
     id: "seed-4",
@@ -70,6 +82,9 @@ const seedOrganizations: DisplayOrganization[] = [
     notAccepting: ["Electronics", "Furniture", "Books"],
     itemsNeeded: 189,
     verified: true,
+    email: "new2u@scwo.org.sg",
+    phone: "+65 6837 0611",
+    website: "https://www.scwo.org.sg",
   },
   {
     id: "seed-5",
@@ -82,6 +97,9 @@ const seedOrganizations: DisplayOrganization[] = [
     notAccepting: ["Clothing", "Food items", "Electronics"],
     itemsNeeded: 112,
     verified: true,
+    email: "enquiries@minds.org.sg",
+    phone: "+65 6479 5655",
+    website: "https://www.minds.org.sg",
   },
   {
     id: "seed-6",
@@ -94,13 +112,17 @@ const seedOrganizations: DisplayOrganization[] = [
     notAccepting: ["Human clothing", "Electronics", "Furniture"],
     itemsNeeded: 78,
     verified: true,
+    email: "info@spca.org.sg",
+    phone: "+65 6287 5355",
+    website: "https://www.spca.org.sg",
   },
 ];
 
 const Organizations = () => {
-  const { organizations: authOrganizations, categories } = useAuth();
+  const { organizations: authOrganizations, categories, users } = useAuth();
   const [selectedType, setSelectedType] = useState("All");
   const [searchQuery, setSearchQuery] = useState("");
+  const [selectedOrg, setSelectedOrg] = useState<DisplayOrganization | null>(null);
 
   // Transform approved AuthContext organizations to display format
   const registeredOrganizations = useMemo((): DisplayOrganization[] => {
@@ -108,13 +130,16 @@ const Organizations = () => {
       .filter((org) => org.status === "approved")
       .map((org) => {
         // Categories are stored by name directly
-        const acceptingNames = org.acceptedCategories.filter(
+        const acceptingNames = (org.acceptedCategories || org.accepted_categories || []).filter(
           (catName) => categories.some((c) => c.name === catName)
         );
 
-        const notAcceptingNames = org.rejectedCategories.filter(
+        const notAcceptingNames = (org.rejectedCategories || org.rejected_categories || []).filter(
           (catName) => categories.some((c) => c.name === catName)
         );
+
+        // Find the user email for this organization
+        const orgUser = users.find(u => u.id === org.user_id);
 
         return {
           id: org.id,
@@ -127,9 +152,10 @@ const Organizations = () => {
           notAccepting: notAcceptingNames,
           itemsNeeded: Math.floor(Math.random() * 100) + 20,
           verified: false,
+          email: orgUser?.email,
         };
       });
-  }, [authOrganizations, categories]);
+  }, [authOrganizations, categories, users]);
 
   // Combine seed and registered organizations
   const allOrganizations = useMemo(() => {
@@ -297,7 +323,7 @@ const Organizations = () => {
                       <Package className="w-4 h-4" />
                       <span>{org.itemsNeeded} items needed</span>
                     </div>
-                    <Button size="sm" variant="default">Contact</Button>
+                    <Button size="sm" variant="default" onClick={() => setSelectedOrg(org)}>Contact</Button>
                   </div>
                 </CardContent>
               </Card>
@@ -314,6 +340,79 @@ const Organizations = () => {
           )}
         </div>
       </main>
+
+      {/* Contact Dialog */}
+      <Dialog open={!!selectedOrg} onOpenChange={() => setSelectedOrg(null)}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-3">
+              {selectedOrg && (
+                <>
+                  <img src={selectedOrg.logo} alt={selectedOrg.name} className="w-12 h-12 rounded-lg object-cover" />
+                  <span>{selectedOrg.name}</span>
+                </>
+              )}
+            </DialogTitle>
+            <DialogDescription>{selectedOrg?.description}</DialogDescription>
+          </DialogHeader>
+          
+          {selectedOrg && (
+            <div className="space-y-4 pt-4">
+              <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                <MapPin className="w-4 h-4" />
+                <span>{selectedOrg.location}</span>
+              </div>
+              
+              {selectedOrg.email && (
+                <a 
+                  href={`mailto:${selectedOrg.email}`}
+                  className="flex items-center gap-3 p-3 rounded-lg bg-muted hover:bg-muted/80 transition-colors"
+                >
+                  <Mail className="w-5 h-5 text-primary" />
+                  <div>
+                    <p className="text-xs text-muted-foreground">Email</p>
+                    <p className="text-sm font-medium">{selectedOrg.email}</p>
+                  </div>
+                </a>
+              )}
+              
+              {selectedOrg.phone && (
+                <a 
+                  href={`tel:${selectedOrg.phone}`}
+                  className="flex items-center gap-3 p-3 rounded-lg bg-muted hover:bg-muted/80 transition-colors"
+                >
+                  <Phone className="w-5 h-5 text-primary" />
+                  <div>
+                    <p className="text-xs text-muted-foreground">Phone</p>
+                    <p className="text-sm font-medium">{selectedOrg.phone}</p>
+                  </div>
+                </a>
+              )}
+              
+              {selectedOrg.website && (
+                <a 
+                  href={selectedOrg.website}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center gap-3 p-3 rounded-lg bg-muted hover:bg-muted/80 transition-colors"
+                >
+                  <Globe className="w-5 h-5 text-primary" />
+                  <div>
+                    <p className="text-xs text-muted-foreground">Website</p>
+                    <p className="text-sm font-medium">{selectedOrg.website}</p>
+                  </div>
+                </a>
+              )}
+
+              {!selectedOrg.email && !selectedOrg.phone && !selectedOrg.website && (
+                <p className="text-sm text-muted-foreground text-center py-4">
+                  Contact information not available for this organization.
+                </p>
+              )}
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
 
       <Footer />
     </div>
