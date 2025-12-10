@@ -46,7 +46,10 @@ export const usePickupRequests = () => {
       .select('*')
       .order('created_at', { ascending: false });
 
+    console.log('Pickup requests fetched:', { pickupData, error, userId: user.id });
+
     if (error || !pickupData) {
+      console.error('Failed to fetch pickup requests:', error);
       setLoading(false);
       return;
     }
@@ -60,9 +63,12 @@ export const usePickupRequests = () => {
         ? supabase.from('profiles').select('id, name, email').in('id', requesterIds)
         : { data: [] },
       listingIds.length > 0
-        ? supabase.from('donation_listings').select('id, title, user_id, images, pickup_location').in('id', listingIds)
+        // Fetch ALL listings regardless of status to ensure donor can see listing info
+        ? supabase.from('donation_listings').select('id, title, user_id, images, pickup_location, status').in('id', listingIds)
         : { data: [] }
     ]);
+
+    console.log('Related data fetched:', { profiles: profilesRes.data, listings: listingsRes.data });
 
     const profilesMap = new Map((profilesRes.data || []).map(p => [p.id, p]));
     const listingsMap = new Map((listingsRes.data || []).map(l => [l.id, l]));
@@ -73,6 +79,7 @@ export const usePickupRequests = () => {
       donation_listings: listingsMap.get(req.listing_id)
     }));
 
+    console.log('Enriched pickup requests:', enrichedRequests);
     setRequests(enrichedRequests as unknown as PickupRequest[]);
     setLoading(false);
   };

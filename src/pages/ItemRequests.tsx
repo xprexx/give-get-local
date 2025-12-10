@@ -23,10 +23,14 @@ const ItemRequests = () => {
     refresh();
   }, []);
 
+  console.log('ItemRequests - all requests:', itemRequests);
+
   // Only show approved and active requests publicly
   const activeRequests = itemRequests.filter(req => 
     req.status === 'active' && req.moderation_status === 'approved'
   );
+
+  console.log('ItemRequests - active/approved requests:', activeRequests);
 
   const filteredRequests = activeRequests.filter(req => {
     const matchesSearch = req.title.toLowerCase().includes(searchQuery.toLowerCase()) ||

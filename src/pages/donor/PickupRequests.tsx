@@ -21,8 +21,17 @@ const DonorPickupRequests = () => {
   const { requests, loading, acceptRequest, rejectRequest, completeRequest, refresh } = usePickupRequests();
   const [selectedRequest, setSelectedRequest] = useState<PickupRequest | null>(null);
 
+  // Refresh data on mount
+  useEffect(() => {
+    refresh();
+  }, []);
+
   // Filter requests where current user is the listing owner (donor)
   const myRequests = requests.filter(r => r.donation_listings?.user_id === user?.id);
+  
+  console.log('DonorPickupRequests - user:', user?.id);
+  console.log('DonorPickupRequests - all requests:', requests);
+  console.log('DonorPickupRequests - myRequests (filtered):', myRequests);
   
   const pendingRequests = myRequests.filter(r => r.status === "pending");
   const activeRequests = myRequests.filter(r => r.status === "accepted");
