@@ -26,11 +26,15 @@ const DonateListing = () => {
     subcategory: "",
     condition: "good",
     pickupLocation: "",
+    customCategory: "",
+    customSubcategory: "",
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSubmitted, setIsSubmitted] = useState(false);
 
   const selectedCategory = categories.find(c => c.name === formData.category);
+  const isOtherCategory = formData.category === "__other__";
+  const isOtherSubcategory = formData.subcategory === "__other__";
 
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
@@ -81,10 +85,31 @@ const DonateListing = () => {
       return;
     }
 
-    if (!formData.title || !formData.description || !formData.category || !formData.pickupLocation) {
+    const finalCategory = isOtherCategory ? formData.customCategory : formData.category;
+    const finalSubcategory = isOtherSubcategory ? formData.customSubcategory : formData.subcategory;
+
+    if (!formData.title || !formData.description || !finalCategory || !formData.pickupLocation) {
       toast({
         title: "Missing information",
         description: "Please fill in all required fields.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (isOtherCategory && !formData.customCategory.trim()) {
+      toast({
+        title: "Missing category",
+        description: "Please specify your custom category.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (isOtherSubcategory && !formData.customSubcategory.trim()) {
+      toast({
+        title: "Missing subcategory",
+        description: "Please specify your custom subcategory.",
         variant: "destructive",
       });
       return;
@@ -97,8 +122,8 @@ const DonateListing = () => {
       title: formData.title,
       description: formData.description,
       images,
-      category: formData.category,
-      subcategory: formData.subcategory || undefined,
+      category: finalCategory,
+      subcategory: finalSubcategory || undefined,
       condition: formData.condition,
       pickupLocation: formData.pickupLocation,
     });
@@ -138,6 +163,8 @@ const DonateListing = () => {
                       subcategory: "",
                       condition: "good",
                       pickupLocation: "",
+                      customCategory: "",
+                      customSubcategory: "",
                     });
                   }}>
                     Donate Another Item
@@ -248,35 +275,67 @@ const DonateListing = () => {
                       <Label htmlFor="category">Category *</Label>
                       <Select
                         value={formData.category}
-                        onValueChange={(value) => setFormData({ ...formData, category: value, subcategory: "" })}
+                        onValueChange={(value) => setFormData({ 
+                          ...formData, 
+                          category: value, 
+                          subcategory: "", 
+                          customCategory: "",
+                          customSubcategory: "" 
+                        })}
                       >
                         <SelectTrigger>
                           <SelectValue placeholder="Select a category" />
                         </SelectTrigger>
-                        <SelectContent>
+                        <SelectContent className="bg-background">
                           {categories.map(cat => (
                             <SelectItem key={cat.name} value={cat.name}>{cat.name}</SelectItem>
                           ))}
+                          <SelectItem value="__other__">Others (specify below)</SelectItem>
                         </SelectContent>
                       </Select>
+                      {isOtherCategory && (
+                        <Input
+                          placeholder="Enter your category"
+                          value={formData.customCategory}
+                          onChange={(e) => setFormData({ ...formData, customCategory: e.target.value })}
+                          maxLength={50}
+                          className="mt-2"
+                        />
+                      )}
                     </div>
 
                     <div className="space-y-2">
                       <Label htmlFor="subcategory">Subcategory</Label>
                       <Select
                         value={formData.subcategory}
-                        onValueChange={(value) => setFormData({ ...formData, subcategory: value })}
-                        disabled={!selectedCategory || selectedCategory.subcategories.length === 0}
+                        onValueChange={(value) => setFormData({ ...formData, subcategory: value, customSubcategory: "" })}
+                        disabled={isOtherCategory ? false : (!selectedCategory || selectedCategory.subcategories.length === 0)}
                       >
                         <SelectTrigger>
-                          <SelectValue placeholder={selectedCategory ? "Select subcategory" : "Select category first"} />
+                          <SelectValue placeholder={
+                            isOtherCategory 
+                              ? "Select or specify subcategory" 
+                              : selectedCategory 
+                                ? "Select subcategory" 
+                                : "Select category first"
+                          } />
                         </SelectTrigger>
-                        <SelectContent>
-                          {selectedCategory?.subcategories.map(sub => (
+                        <SelectContent className="bg-background">
+                          {!isOtherCategory && selectedCategory?.subcategories.map(sub => (
                             <SelectItem key={sub} value={sub}>{sub}</SelectItem>
                           ))}
+                          <SelectItem value="__other__">Others (specify below)</SelectItem>
                         </SelectContent>
                       </Select>
+                      {isOtherSubcategory && (
+                        <Input
+                          placeholder="Enter your subcategory"
+                          value={formData.customSubcategory}
+                          onChange={(e) => setFormData({ ...formData, customSubcategory: e.target.value })}
+                          maxLength={50}
+                          className="mt-2"
+                        />
+                      )}
                     </div>
                   </div>
 
