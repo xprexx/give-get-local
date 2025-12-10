@@ -27,13 +27,27 @@ export const useItemRequests = () => {
   const [loading, setLoading] = useState(true);
 
   const fetchRequests = async () => {
+    setLoading(true);
     const { data, error } = await supabase
       .from('item_requests')
       .select('*')
       .order('created_at', { ascending: false });
 
     if (!error && data) {
-      setRequests(data as unknown as ItemRequest[]);
+      // Fetch related profiles
+      const userIds = [...new Set(data.map(r => r.user_id))];
+      const { data: profiles } = userIds.length > 0
+        ? await supabase.from('profiles').select('id, name, email').in('id', userIds)
+        : { data: [] };
+      
+      const profilesMap = new Map((profiles || []).map(p => [p.id, p]));
+      
+      const enrichedRequests = data.map(req => ({
+        ...req,
+        profiles: profilesMap.get(req.user_id)
+      }));
+      
+      setRequests(enrichedRequests as unknown as ItemRequest[]);
     }
     setLoading(false);
   };
