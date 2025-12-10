@@ -2,9 +2,19 @@ import { useState } from "react";
 import { Link } from "react-router-dom";
 import Navbar from "@/components/Navbar";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -15,19 +25,39 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { useAuth } from "@/contexts/AuthContext";
-import { useDonationListings } from "@/hooks/useDonationListings";
+import { useDonationListings, DonationListing } from "@/hooks/useDonationListings";
+import { useCategories } from "@/hooks/useCategories";
 import { useToast } from "@/hooks/use-toast";
 import { 
-  ArrowLeft, Package, Plus, MapPin, Clock, Trash2, Edit, Eye
+  ArrowLeft, Package, Plus, MapPin, Clock, Trash2, Edit
 } from "lucide-react";
 import { format } from "date-fns";
 
 const MyListings = () => {
   const { user } = useAuth();
   const { listings, loading, deleteListing, updateListing } = useDonationListings();
+  const { categories } = useCategories();
   const { toast } = useToast();
   const [deleteId, setDeleteId] = useState<string | null>(null);
+  const [editListing, setEditListing] = useState<DonationListing | null>(null);
+  const [editForm, setEditForm] = useState({
+    title: '',
+    description: '',
+    category: '',
+    subcategory: '',
+    condition: '',
+    pickup_location: '',
+  });
+  const [isUpdating, setIsUpdating] = useState(false);
 
   // Filter to only show current user's listings
   const myListings = listings.filter(l => l.user_id === user?.id);
@@ -68,6 +98,50 @@ const MyListings = () => {
       });
     }
   };
+
+  const openEditDialog = (listing: DonationListing) => {
+    setEditListing(listing);
+    setEditForm({
+      title: listing.title,
+      description: listing.description,
+      category: listing.category,
+      subcategory: listing.subcategory || '',
+      condition: listing.condition,
+      pickup_location: listing.pickup_location,
+    });
+  };
+
+  const handleUpdate = async () => {
+    if (!editListing) return;
+    setIsUpdating(true);
+    
+    const { error } = await updateListing(editListing.id, {
+      title: editForm.title,
+      description: editForm.description,
+      category: editForm.category,
+      subcategory: editForm.subcategory || undefined,
+      condition: editForm.condition as 'new' | 'like_new' | 'good' | 'fair',
+      pickup_location: editForm.pickup_location,
+    });
+    
+    setIsUpdating(false);
+    
+    if (error) {
+      toast({
+        title: "Error",
+        description: "Failed to update listing",
+        variant: "destructive",
+      });
+    } else {
+      toast({
+        title: "Listing updated",
+        description: "Your changes have been saved",
+      });
+      setEditListing(null);
+    }
+  };
+
+  const selectedCategory = categories.find(c => c.name === editForm.category);
 
   const getConditionLabel = (condition: string) => {
     const labels: Record<string, string> = {
@@ -119,6 +193,13 @@ const MyListings = () => {
         <div className="flex flex-col gap-2">
           {listing.status === 'available' && (
             <>
+              <Button 
+                size="sm" 
+                variant="outline"
+                onClick={() => openEditDialog(listing)}
+              >
+                <Edit className="w-4 h-4" />
+              </Button>
               <Button 
                 size="sm" 
                 variant="outline"
@@ -259,6 +340,112 @@ const MyListings = () => {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Edit Dialog */}
+      <Dialog open={!!editListing} onOpenChange={() => setEditListing(null)}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Edit Listing</DialogTitle>
+            <DialogDescription>
+              Update your donation listing details
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label htmlFor="title">Title</Label>
+              <Input
+                id="title"
+                value={editForm.title}
+                onChange={(e) => setEditForm(prev => ({ ...prev, title: e.target.value }))}
+              />
+            </div>
+            
+            <div className="space-y-2">
+              <Label htmlFor="description">Description</Label>
+              <Textarea
+                id="description"
+                value={editForm.description}
+                onChange={(e) => setEditForm(prev => ({ ...prev, description: e.target.value }))}
+                rows={3}
+              />
+            </div>
+            
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label>Category</Label>
+                <Select 
+                  value={editForm.category} 
+                  onValueChange={(value) => setEditForm(prev => ({ ...prev, category: value, subcategory: '' }))}
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {categories.map(cat => (
+                      <SelectItem key={cat.name} value={cat.name}>{cat.name}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              
+              <div className="space-y-2">
+                <Label>Subcategory</Label>
+                <Select 
+                  value={editForm.subcategory} 
+                  onValueChange={(value) => setEditForm(prev => ({ ...prev, subcategory: value }))}
+                  disabled={!selectedCategory?.subcategories?.length}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Optional" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {selectedCategory?.subcategories?.map(sub => (
+                      <SelectItem key={sub} value={sub}>{sub}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+            
+            <div className="space-y-2">
+              <Label>Condition</Label>
+              <Select 
+                value={editForm.condition} 
+                onValueChange={(value) => setEditForm(prev => ({ ...prev, condition: value }))}
+              >
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="new">New</SelectItem>
+                  <SelectItem value="like_new">Like New</SelectItem>
+                  <SelectItem value="good">Good</SelectItem>
+                  <SelectItem value="fair">Fair</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            
+            <div className="space-y-2">
+              <Label htmlFor="location">Pickup Location</Label>
+              <Input
+                id="location"
+                value={editForm.pickup_location}
+                onChange={(e) => setEditForm(prev => ({ ...prev, pickup_location: e.target.value }))}
+              />
+            </div>
+          </div>
+          
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setEditListing(null)}>
+              Cancel
+            </Button>
+            <Button onClick={handleUpdate} disabled={isUpdating}>
+              {isUpdating ? "Saving..." : "Save Changes"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
