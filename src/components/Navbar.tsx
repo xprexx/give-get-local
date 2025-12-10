@@ -1,7 +1,7 @@
 import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Heart, Menu, X, LogOut, User, Building2, Shield, HandHeart, LayoutDashboard } from "lucide-react";
+import { Heart, Menu, X, LogOut, User, Building2, Shield, HandHeart, LayoutDashboard, PlusCircle } from "lucide-react";
 import { useState } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import NotificationDropdown from "@/components/NotificationDropdown";
@@ -34,7 +34,7 @@ const Navbar = () => {
           </Link>
 
           {/* Desktop Navigation */}
-          <div className="hidden md:flex items-center gap-8">
+          <div className="hidden md:flex items-center gap-6">
             <Link to="/browse" className="text-muted-foreground hover:text-foreground transition-colors font-medium">
               Browse Items
             </Link>
@@ -55,9 +55,6 @@ const Navbar = () => {
             <Link to="/organizations" className="text-muted-foreground hover:text-foreground transition-colors font-medium">
               Organizations
             </Link>
-            <Link to="/impact-stories" className="text-muted-foreground hover:text-foreground transition-colors font-medium">
-              Impact
-            </Link>
             <Link to="/crowdfunding" className="text-muted-foreground hover:text-foreground transition-colors font-medium">
               Crowdfunding
             </Link>
@@ -69,6 +66,12 @@ const Navbar = () => {
           <div className="hidden md:flex items-center gap-3">
             {user ? (
               <>
+                <Link to="/donate">
+                  <Button variant="hero" size="sm" className="gap-2">
+                    <PlusCircle className="h-4 w-4" />
+                    Donate Item
+                  </Button>
+                </Link>
                 <NotificationDropdown />
                 <Link to="/account">
                   <Button variant="ghost" className="gap-2">
@@ -98,7 +101,9 @@ const Navbar = () => {
                 <Link to="/auth">
                   <Button variant="ghost">Sign In</Button>
                 </Link>
-                <Button variant="hero">Donate Now</Button>
+                <Link to="/donate">
+                  <Button variant="hero">Donate Now</Button>
+                </Link>
               </>
             )}
           </div>
@@ -146,40 +151,48 @@ const Navbar = () => {
               <Link to="/volunteer" className="text-muted-foreground hover:text-foreground transition-colors font-medium py-2" onClick={() => setIsOpen(false)}>
                 Volunteer
               </Link>
-              <div className="flex flex-col gap-2 pt-4 border-t border-border">
-                {user ? (
-                  <>
-                    <Link to="/account" onClick={() => setIsOpen(false)}>
+            <div className="flex flex-col gap-2 pt-4 border-t border-border">
+              {user ? (
+                <>
+                  <Link to="/donate" onClick={() => setIsOpen(false)}>
+                    <Button variant="hero" className="w-full gap-2">
+                      <PlusCircle className="h-4 w-4" />
+                      Donate Item
+                    </Button>
+                  </Link>
+                  <Link to="/account" onClick={() => setIsOpen(false)}>
+                    <Button variant="ghost" className="w-full gap-2">
+                      {user.role === 'admin' && <Shield className="h-4 w-4" />}
+                      {user.role === 'organization' && <Building2 className="h-4 w-4" />}
+                      {user.role === 'beneficiary' && <HandHeart className="h-4 w-4" />}
+                      {user.role === 'user' && <User className="h-4 w-4" />}
+                      {user.name} - Account
+                    </Button>
+                  </Link>
+                  {(user.role === 'admin' || user.role === 'organization') && (
+                    <Link to={getDashboardLink()} onClick={() => setIsOpen(false)}>
                       <Button variant="ghost" className="w-full gap-2">
-                        {user.role === 'admin' && <Shield className="h-4 w-4" />}
-                        {user.role === 'organization' && <Building2 className="h-4 w-4" />}
-                        {user.role === 'beneficiary' && <HandHeart className="h-4 w-4" />}
-                        {user.role === 'user' && <User className="h-4 w-4" />}
-                        {user.name} - Account
+                        <LayoutDashboard className="h-4 w-4" />
+                        Dashboard
                       </Button>
                     </Link>
-                    {(user.role === 'admin' || user.role === 'organization') && (
-                      <Link to={getDashboardLink()} onClick={() => setIsOpen(false)}>
-                        <Button variant="ghost" className="w-full gap-2">
-                          <LayoutDashboard className="h-4 w-4" />
-                          Dashboard
-                        </Button>
-                      </Link>
-                    )}
-                    <Button variant="ghost" className="w-full" onClick={handleLogout}>
-                      <LogOut className="h-4 w-4 mr-2" />
-                      Logout
-                    </Button>
-                  </>
-                ) : (
-                  <>
-                    <Link to="/auth">
-                      <Button variant="ghost" className="w-full">Sign In</Button>
-                    </Link>
+                  )}
+                  <Button variant="ghost" className="w-full" onClick={handleLogout}>
+                    <LogOut className="h-4 w-4 mr-2" />
+                    Logout
+                  </Button>
+                </>
+              ) : (
+                <>
+                  <Link to="/auth" onClick={() => setIsOpen(false)}>
+                    <Button variant="ghost" className="w-full">Sign In</Button>
+                  </Link>
+                  <Link to="/donate" onClick={() => setIsOpen(false)}>
                     <Button variant="hero" className="w-full">Donate Now</Button>
-                  </>
-                )}
-              </div>
+                  </Link>
+                </>
+              )}
+            </div>
             </div>
           </div>
         )}

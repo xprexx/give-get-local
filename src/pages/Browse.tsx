@@ -1,10 +1,11 @@
 import { useState } from "react";
+import { Link } from "react-router-dom";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import DonationCard, { DonationItem } from "@/components/DonationCard";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Search, SlidersHorizontal, MapPin } from "lucide-react";
+import { Search, SlidersHorizontal, MapPin, PlusCircle } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 
 const sampleItems: DonationItem[] = [
@@ -184,13 +185,21 @@ const Browse = () => {
       <main className="pt-24 pb-16">
         <div className="container mx-auto px-4">
           {/* Header */}
-          <div className="mb-8">
-            <h1 className="text-3xl md:text-4xl font-bold text-foreground mb-4">
-              Browse Donations in Singapore
-            </h1>
-            <p className="text-lg text-muted-foreground">
-              Find items available for pickup near you
-            </p>
+          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-8">
+            <div>
+              <h1 className="text-3xl md:text-4xl font-bold text-foreground mb-2">
+                Browse Donations in Singapore
+              </h1>
+              <p className="text-lg text-muted-foreground">
+                Find items available for pickup near you
+              </p>
+            </div>
+            <Link to="/donate">
+              <Button variant="hero" size="lg" className="gap-2 whitespace-nowrap">
+                <PlusCircle className="h-5 w-5" />
+                Donate an Item
+              </Button>
+            </Link>
           </div>
 
           {/* Search and Filters */}
