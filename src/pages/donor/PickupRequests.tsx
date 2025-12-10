@@ -136,12 +136,7 @@ const DonorPickupRequests = () => {
     if (selectedRequest?.id === requestId) {
       setSelectedRequest(prev => prev ? { ...prev, status: "accepted" } : null);
     }
-    addNotification({
-      type: 'pickup',
-      title: 'Pickup Request Accepted',
-      message: `You accepted ${request?.requesterName}'s pickup request for "${request?.itemTitle}".`,
-      link: '/donor/pickup-requests',
-    });
+    // Note: In a real implementation, notifications would be created server-side
     toast({
       title: "Request Accepted",
       description: "You can now chat with the requester to coordinate pickup.",

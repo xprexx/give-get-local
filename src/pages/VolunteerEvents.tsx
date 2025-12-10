@@ -207,13 +207,7 @@ const VolunteerEvents = () => {
 
     setRegistrations(prev => [...prev, newRegistration]);
 
-    // Add notification
-    addNotification({
-      type: 'volunteer',
-      title: 'Volunteer Application Submitted',
-      message: `Your application for "${selectedEvent?.title}" has been submitted and is pending approval from ${selectedEvent?.organizationName}.`,
-      link: '/volunteer',
-    });
+    // Note: In a real implementation, notifications would be created server-side
 
     setIsSubmitting(false);
     setSignupSuccess(true);

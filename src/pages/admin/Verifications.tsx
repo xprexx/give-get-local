@@ -29,28 +29,28 @@ const AdminVerifications = () => {
     return { ...org, user: orgUser };
   });
 
-  const handleApproveBeneficiary = (userId: string, userName: string) => {
-    approveUser(userId);
-    addNotification({
+  const handleApproveBeneficiary = async (userId: string, userName: string) => {
+    await approveUser(userId);
+    await addNotification({
       type: 'approval',
       title: 'Beneficiary Approved',
       message: `${userName} has been verified and can now access the platform.`,
       link: '/admin/verifications',
-    });
+    }, userId);
     toast({
       title: 'Beneficiary Approved',
       description: `${userName} has been verified and can now access the platform.`,
     });
   };
 
-  const handleRejectBeneficiary = (userId: string, userName: string) => {
-    rejectUser(userId);
-    addNotification({
+  const handleRejectBeneficiary = async (userId: string, userName: string) => {
+    await rejectUser(userId);
+    await addNotification({
       type: 'system',
       title: 'Beneficiary Rejected',
       message: `${userName}'s verification has been rejected.`,
       link: '/admin/verifications',
-    });
+    }, userId);
     toast({
       title: 'Beneficiary Rejected',
       description: `${userName}'s verification has been rejected.`,
@@ -58,28 +58,34 @@ const AdminVerifications = () => {
     });
   };
 
-  const handleApproveOrg = (orgId: string, orgName: string) => {
-    approveOrganization(orgId);
-    addNotification({
-      type: 'approval',
-      title: 'Organization Approved',
-      message: `${orgName} has been verified and can now access the platform.`,
-      link: '/admin/organizations',
-    });
+  const handleApproveOrg = async (orgId: string, orgName: string) => {
+    const org = pendingOrgs.find(o => o.id === orgId);
+    await approveOrganization(orgId);
+    if (org?.user?.id) {
+      await addNotification({
+        type: 'approval',
+        title: 'Organization Approved',
+        message: `${orgName} has been verified and can now access the platform.`,
+        link: '/admin/organizations',
+      }, org.user.id);
+    }
     toast({
       title: 'Organization Approved',
       description: `${orgName} has been verified and can now access the platform.`,
     });
   };
 
-  const handleRejectOrg = (orgId: string, orgName: string) => {
-    rejectOrganization(orgId);
-    addNotification({
-      type: 'system',
-      title: 'Organization Rejected',
-      message: `${orgName}'s verification has been rejected.`,
-      link: '/admin/organizations',
-    });
+  const handleRejectOrg = async (orgId: string, orgName: string) => {
+    const org = pendingOrgs.find(o => o.id === orgId);
+    await rejectOrganization(orgId);
+    if (org?.user?.id) {
+      await addNotification({
+        type: 'system',
+        title: 'Organization Rejected',
+        message: `${orgName}'s verification has been rejected.`,
+        link: '/admin/organizations',
+      }, org.user.id);
+    }
     toast({
       title: 'Organization Rejected',
       description: `${orgName}'s verification has been rejected.`,

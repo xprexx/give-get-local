@@ -175,13 +175,8 @@ const Crowdfunding = () => {
       return c;
     }));
 
-    // Add notification
-    addNotification({
-      type: 'crowdfunding',
-      title: 'Donation Successful',
-      message: `You donated ${formatCurrency(amount)} to "${selectedCampaign?.title}". Thank you for your generosity!`,
-      link: '/crowdfunding',
-    });
+    // Note: In a real implementation, notifications would be created server-side
+    // For now, we skip the notification as we don't have the user ID readily available
 
     setIsProcessing(false);
     setPaymentSuccess(true);

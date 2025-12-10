@@ -131,12 +131,7 @@ const OrganizationVolunteerApprovals = () => {
         : e
     ));
 
-    // Add notification
-    addNotification({
-      type: 'approval',
-      title: 'Volunteer Approved',
-      message: `${registration.name} has been approved for ${registration.eventTitle}.`,
-    });
+    // Note: In a real implementation, notifications would be created server-side
 
     toast({
       title: "Volunteer Approved",

@@ -139,9 +139,8 @@ const OrganizationCategories = () => {
     }
 
     submitCategoryProposal({
-      organizationId: myOrg?.id || '',
-      organizationName: myOrg?.name || '',
-      categoryName: newCategory,
+      organization_id: myOrg?.id || '',
+      category_name: newCategory,
       subcategory: newSubcategory || undefined,
       description: proposalDescription,
     });
