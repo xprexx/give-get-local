@@ -148,6 +148,7 @@ interface AuthContextType {
   ) => Promise<{ success: boolean; error?: string }>;
   logout: () => Promise<void>;
   refreshUserData: () => Promise<void>;
+  refreshProfile: () => Promise<void>;
   // Admin functions
   resetPassword: (userId: string) => Promise<void>;
   banUser: (userId: string) => Promise<void>;
@@ -326,6 +327,15 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       console.error('Error fetching user data:', error);
     }
   }, []);
+
+  const refreshProfile = useCallback(async () => {
+    if (authUser) {
+      const { data: profileData } = await supabase.from('profiles').select('*').eq('id', authUser.id).maybeSingle();
+      if (profileData) {
+        setProfile(profileData as unknown as Profile);
+      }
+    }
+  }, [authUser]);
 
   const fetchAllData = useCallback(async () => {
     await Promise.all([
@@ -661,7 +671,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     <AuthContext.Provider value={{
       user, session, profile, userRole, organization, organizations, users, categories,
       categoryProposals, itemRequests, donationListings, loading,
-      login, signup, logout, refreshUserData,
+      login, signup, logout, refreshUserData, refreshProfile,
       resetPassword, banUser, unbanUser, deleteUser, approveUser, rejectUser,
       approveOrganization, rejectOrganization, updateOrganization,
       submitCategoryProposal, reviewCategoryProposal,

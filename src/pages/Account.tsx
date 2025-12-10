@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { ArrowLeft, User, Lock, Save, Eye, EyeOff } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -7,15 +7,16 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
+import { supabase } from '@/integrations/supabase/client';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
 
 const Account = () => {
-  const { user, users, login } = useAuth();
+  const { user, profile, refreshProfile } = useAuth();
   const { toast } = useToast();
   
-  const [name, setName] = useState(user?.name || '');
-  const [email, setEmail] = useState(user?.email || '');
+  const [name, setName] = useState('');
+  const [email, setEmail] = useState('');
   const [currentPassword, setCurrentPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
@@ -24,6 +25,14 @@ const Account = () => {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [isSavingProfile, setIsSavingProfile] = useState(false);
   const [isSavingPassword, setIsSavingPassword] = useState(false);
+
+  // Update local state when profile loads
+  useEffect(() => {
+    if (profile) {
+      setName(profile.name || '');
+      setEmail(profile.email || user?.email || '');
+    }
+  }, [profile, user]);
 
   const handleSaveProfile = async () => {
     if (!user) return;
@@ -39,26 +48,32 @@ const Account = () => {
 
     setIsSavingProfile(true);
     
-    // Update user in localStorage
-    const storedUsers = JSON.parse(localStorage.getItem('givelocal_users') || '[]');
-    const updatedUsers = storedUsers.map((u: any) => 
-      u.id === user.id ? { ...u, name: name.trim() } : u
-    );
-    localStorage.setItem('givelocal_users', JSON.stringify(updatedUsers));
-    
-    // Update current user in localStorage
-    const updatedUser = { ...user, name: name.trim() };
-    localStorage.setItem('givelocal_user', JSON.stringify(updatedUser));
-    
-    // Force a page reload to update the auth context
-    setTimeout(() => {
-      setIsSavingProfile(false);
+    try {
+      const { error } = await supabase
+        .from('profiles')
+        .update({ name: name.trim() })
+        .eq('id', user.id);
+
+      if (error) throw error;
+
+      // Refresh profile data
+      if (refreshProfile) {
+        await refreshProfile();
+      }
+
       toast({
         title: "Profile Updated",
         description: "Your profile has been updated successfully.",
       });
-      window.location.reload();
-    }, 500);
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to update profile",
+        variant: "destructive",
+      });
+    } finally {
+      setIsSavingProfile(false);
+    }
   };
 
   const handleChangePassword = async () => {
@@ -102,25 +117,30 @@ const Account = () => {
 
     setIsSavingPassword(true);
 
-    // Verify current password using givelocal_passwords
-    const storedPasswords = JSON.parse(localStorage.getItem('givelocal_passwords') || '{}');
-    
-    if (storedPasswords[user.email] !== currentPassword) {
-      setIsSavingPassword(false);
-      toast({
-        title: "Error",
-        description: "Current password is incorrect",
-        variant: "destructive",
+    try {
+      // First verify current password by trying to sign in
+      const { error: signInError } = await supabase.auth.signInWithPassword({
+        email: user.email!,
+        password: currentPassword,
       });
-      return;
-    }
 
-    // Update password in givelocal_passwords
-    storedPasswords[user.email] = newPassword;
-    localStorage.setItem('givelocal_passwords', JSON.stringify(storedPasswords));
+      if (signInError) {
+        toast({
+          title: "Error",
+          description: "Current password is incorrect",
+          variant: "destructive",
+        });
+        setIsSavingPassword(false);
+        return;
+      }
 
-    setTimeout(() => {
-      setIsSavingPassword(false);
+      // Update password
+      const { error: updateError } = await supabase.auth.updateUser({
+        password: newPassword,
+      });
+
+      if (updateError) throw updateError;
+
       setCurrentPassword('');
       setNewPassword('');
       setConfirmPassword('');
@@ -128,7 +148,15 @@ const Account = () => {
         title: "Password Changed",
         description: "Your password has been changed successfully.",
       });
-    }, 500);
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to change password",
+        variant: "destructive",
+      });
+    } finally {
+      setIsSavingPassword(false);
+    }
   };
 
   if (!user) {
