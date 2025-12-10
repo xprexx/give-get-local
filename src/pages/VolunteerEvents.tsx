@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -48,6 +49,7 @@ const VolunteerEvents = () => {
   const { organizations, user } = useAuth();
   const { toast } = useToast();
   const { addNotification } = useNotifications();
+  const navigate = useNavigate();
 
   const [events, setEvents] = useState<VolunteerEvent[]>([
     {
@@ -217,6 +219,23 @@ const VolunteerEvents = () => {
     setIsSignupDialogOpen(false);
     setSelectedEvent(null);
     setSignupSuccess(false);
+  };
+
+  const handlePostEventClick = () => {
+    if (user?.role === "organization") {
+      navigate("/organization/volunteer-events");
+    } else if (user) {
+      toast({
+        title: "Organizations Only",
+        description: "Only verified charity organizations can post volunteer events. Register as an organization to access this feature.",
+      });
+    } else {
+      toast({
+        title: "Login Required",
+        description: "Please log in as an organization to post volunteer events.",
+      });
+      navigate("/auth");
+    }
   };
 
   return (
@@ -401,7 +420,7 @@ const VolunteerEvents = () => {
                   If you're a verified charity organization, you can create volunteer event listings 
                   to find dedicated volunteers for your activities.
                 </p>
-                <Button size="lg" variant="secondary" className="font-semibold">
+                <Button size="lg" variant="secondary" className="font-semibold" onClick={handlePostEventClick}>
                   Post a Volunteer Event
                 </Button>
               </CardContent>
