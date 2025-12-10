@@ -61,8 +61,8 @@ const MyListings = () => {
 
   // Filter to only show current user's listings
   const myListings = listings.filter(l => l.user_id === user?.id);
-  const activeListings = myListings.filter(l => l.status === 'available');
-  const claimedListings = myListings.filter(l => l.status === 'claimed');
+  // Combine available and claimed in the same tab
+  const activeListings = myListings.filter(l => l.status === 'available' || l.status === 'claimed');
   const removedListings = myListings.filter(l => l.status === 'removed');
 
   const handleDelete = async () => {
@@ -83,8 +83,9 @@ const MyListings = () => {
     setDeleteId(null);
   };
 
-  const handleMarkClaimed = async (id: string) => {
-    const { error } = await updateListing(id, { status: 'claimed' });
+  const handleToggleClaimed = async (id: string, currentStatus: string) => {
+    const newStatus = currentStatus === 'claimed' ? 'available' : 'claimed';
+    const { error } = await updateListing(id, { status: newStatus });
     if (error) {
       toast({
         title: "Error",
@@ -93,8 +94,8 @@ const MyListings = () => {
       });
     } else {
       toast({
-        title: "Listing marked as claimed",
-        description: "The item has been marked as claimed",
+        title: newStatus === 'claimed' ? "Listing marked as claimed" : "Listing unmarked",
+        description: newStatus === 'claimed' ? "The item has been marked as claimed" : "The item is now available again",
       });
     }
   };
@@ -156,23 +157,25 @@ const MyListings = () => {
   const getStatusBadge = (status: string) => {
     switch (status) {
       case "available": return <Badge variant="default">Available</Badge>;
-      case "claimed": return <Badge variant="secondary">Claimed</Badge>;
+      case "claimed": return <Badge className="bg-amber-500 hover:bg-amber-600 text-white">Claimed</Badge>;
       case "removed": return <Badge variant="outline">Removed</Badge>;
       default: return null;
     }
   };
 
+  const isClaimed = (listing: DonationListing) => listing.status === 'claimed';
+
   const renderListingCard = (listing: typeof myListings[0]) => (
-    <Card key={listing.id} className="overflow-hidden">
+    <Card key={listing.id} className={`overflow-hidden transition-all ${isClaimed(listing) ? 'border-amber-500/50 bg-amber-50/30 dark:bg-amber-950/10' : ''}`}>
       <div className="flex gap-4 p-4">
         <img 
           src={listing.images?.[0] || "https://images.unsplash.com/photo-1560472354-b33ff0c44a43?w=300&h=300&fit=crop"} 
           alt={listing.title}
-          className="w-24 h-24 rounded-lg object-cover flex-shrink-0"
+          className={`w-24 h-24 rounded-lg object-cover flex-shrink-0 ${isClaimed(listing) ? 'opacity-75 grayscale-[30%]' : ''}`}
         />
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 mb-1">
-            <h3 className="font-semibold truncate">{listing.title}</h3>
+            <h3 className={`font-semibold truncate ${isClaimed(listing) ? 'text-muted-foreground' : ''}`}>{listing.title}</h3>
             {getStatusBadge(listing.status)}
           </div>
           <p className="text-sm text-muted-foreground line-clamp-2 mb-2">{listing.description}</p>
@@ -203,7 +206,7 @@ const MyListings = () => {
               <Button 
                 size="sm" 
                 variant="outline"
-                onClick={() => handleMarkClaimed(listing.id)}
+                onClick={() => handleToggleClaimed(listing.id, listing.status)}
               >
                 Mark Claimed
               </Button>
@@ -216,6 +219,16 @@ const MyListings = () => {
                 <Trash2 className="w-4 h-4" />
               </Button>
             </>
+          )}
+          {listing.status === 'claimed' && (
+            <Button 
+              size="sm" 
+              variant="outline"
+              className="border-amber-500 text-amber-600 hover:bg-amber-50"
+              onClick={() => handleToggleClaimed(listing.id, listing.status)}
+            >
+              Unclaim
+            </Button>
           )}
         </div>
       </div>
@@ -263,10 +276,7 @@ const MyListings = () => {
         <Tabs defaultValue="active" className="w-full">
           <TabsList className="mb-4">
             <TabsTrigger value="active">
-              Available ({activeListings.length})
-            </TabsTrigger>
-            <TabsTrigger value="claimed">
-              Claimed ({claimedListings.length})
+              My Listings ({activeListings.length})
             </TabsTrigger>
             <TabsTrigger value="removed">
               Removed ({removedListings.length})
@@ -288,21 +298,6 @@ const MyListings = () => {
             ) : (
               <div className="space-y-4">
                 {activeListings.map(renderListingCard)}
-              </div>
-            )}
-          </TabsContent>
-
-          <TabsContent value="claimed">
-            {claimedListings.length === 0 ? (
-              <Card className="text-center py-12">
-                <CardContent>
-                  <Package className="w-12 h-12 mx-auto text-muted-foreground/50 mb-4" />
-                  <p className="text-muted-foreground">No claimed listings yet</p>
-                </CardContent>
-              </Card>
-            ) : (
-              <div className="space-y-4">
-                {claimedListings.map(renderListingCard)}
               </div>
             )}
           </TabsContent>
