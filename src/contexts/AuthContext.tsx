@@ -1,24 +1,46 @@
-import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import React, { createContext, useContext, useState, useEffect, ReactNode, useCallback } from 'react';
+import { User, Session } from '@supabase/supabase-js';
+import { supabase } from '@/integrations/supabase/client';
 
 export type UserRole = 'user' | 'beneficiary' | 'organization' | 'admin';
-
 export type UserStatus = 'active' | 'pending' | 'rejected';
 
-export interface User {
+export interface Profile {
   id: string;
   email: string;
   name: string;
-  role: UserRole;
   status: UserStatus;
-  verificationDocument?: string; // base64 stored document
-  verificationDocumentName?: string;
-  // Beneficiary-specific fields
+  verification_document?: string;
+  verification_document_name?: string;
   nric?: string;
   address?: string;
   birthdate?: string;
-  declarationAgreed?: boolean;
-  createdAt: string;
-  isBanned: boolean;
+  declaration_agreed?: boolean;
+  is_banned: boolean;
+  created_at: string;
+  updated_at: string;
+  role?: UserRole; // Added for compatibility
+}
+
+export interface Organization {
+  id: string;
+  user_id: string;
+  userId?: string;
+  name: string;
+  description: string;
+  accepted_categories: string[];
+  acceptedCategories?: string[];
+  rejected_categories: string[];
+  rejectedCategories?: string[];
+  subcategoryPreferences?: SubcategoryPreference[];
+  status: 'pending' | 'approved' | 'rejected';
+  verification_document?: string;
+  verificationDocument?: string;
+  verification_document_name?: string;
+  verificationDocumentName?: string;
+  created_at: string;
+  createdAt?: string;
+  updated_at: string;
 }
 
 export interface SubcategoryPreference {
@@ -27,590 +49,623 @@ export interface SubcategoryPreference {
   rejectedSubcategories: string[];
 }
 
-export interface Organization {
-  id: string;
-  userId: string;
+export interface Category {
+  id?: string;
   name: string;
-  description: string;
-  acceptedCategories: string[];
-  rejectedCategories: string[];
-  subcategoryPreferences: SubcategoryPreference[];
-  proposedCategories: string[];
-  status: 'pending' | 'approved' | 'rejected';
-  verificationDocument?: string;
-  verificationDocumentName?: string;
-  createdAt: string;
+  subcategories: string[];
 }
 
 export interface CategoryProposal {
   id: string;
-  organizationId: string;
-  organizationName: string;
-  categoryName: string;
+  organization_id: string;
+  organizationId?: string;
+  organizationName?: string;
+  category_name: string;
+  categoryName?: string;
   subcategory?: string;
   description: string;
   status: 'pending' | 'approved' | 'rejected';
-  createdAt: string;
+  created_at: string;
+  createdAt?: string;
 }
 
 export interface ItemRequest {
   id: string;
-  userId: string;
+  user_id: string;
+  userId?: string;
   title: string;
   description: string;
   category: string;
-  isCustomCategory: boolean;
+  is_custom_category: boolean;
+  isCustomCategory?: boolean;
   location: string;
   urgency: 'low' | 'medium' | 'high';
   status: 'active' | 'fulfilled' | 'cancelled';
-  moderationStatus: 'pending' | 'approved' | 'rejected';
+  moderation_status: 'pending' | 'approved' | 'rejected';
+  moderationStatus?: 'pending' | 'approved' | 'rejected';
+  moderation_note?: string;
   moderationNote?: string;
-  createdAt: string;
+  created_at: string;
+  createdAt?: string;
 }
 
 export interface DonationListing {
   id: string;
-  userId: string;
+  user_id: string;
+  userId?: string;
   title: string;
   description: string;
   images: string[];
   category: string;
   subcategory?: string;
   condition: string;
-  pickupLocation: string;
+  pickup_location: string;
+  pickupLocation?: string;
   status: 'available' | 'claimed' | 'removed';
+  created_at: string;
+  createdAt?: string;
+}
+
+// Extended user type for compatibility
+export interface ExtendedUser {
+  id: string;
+  email: string;
+  name: string;
+  role: UserRole;
+  status: UserStatus;
+  isBanned: boolean;
+  verificationDocument?: string;
+  verificationDocumentName?: string;
+  nric?: string;
+  address?: string;
+  birthdate?: string;
+  declarationAgreed?: boolean;
   createdAt: string;
 }
 
 interface AuthContextType {
-  user: User | null;
-  users: User[];
+  user: ExtendedUser | null;
+  session: Session | null;
+  profile: Profile | null;
+  userRole: UserRole | null;
+  organization: Organization | null;
   organizations: Organization[];
+  users: ExtendedUser[];
+  categories: Category[];
   categoryProposals: CategoryProposal[];
   itemRequests: ItemRequest[];
   donationListings: DonationListing[];
-  categories: { name: string; subcategories: string[] }[];
+  loading: boolean;
   login: (email: string, password: string) => Promise<{ success: boolean; error?: string }>;
-  signup: (email: string, password: string, name: string, role: UserRole, verificationDocument?: string, verificationDocumentName?: string, beneficiaryDetails?: { nric: string; address: string; birthdate: string }) => Promise<{ success: boolean; error?: string }>;
-  logout: () => void;
-  resetPassword: (userId: string) => void;
-  banUser: (userId: string) => void;
-  unbanUser: (userId: string) => void;
-  deleteUser: (userId: string) => void;
-  approveUser: (userId: string) => void;
-  rejectUser: (userId: string) => void;
-  updateOrganization: (org: Partial<Organization>) => void;
-  submitCategoryProposal: (proposal: Omit<CategoryProposal, 'id' | 'status' | 'createdAt'>) => void;
-  reviewCategoryProposal: (proposalId: string, status: 'approved' | 'rejected') => void;
-  approveOrganization: (orgId: string) => void;
-  rejectOrganization: (orgId: string) => void;
-  addCategory: (name: string) => void;
-  updateCategory: (oldName: string, newName: string) => void;
-  deleteCategory: (name: string) => void;
-  addSubcategory: (categoryName: string, subcategory: string) => void;
-  updateSubcategory: (categoryName: string, oldSubcategory: string, newSubcategory: string) => void;
-  deleteSubcategory: (categoryName: string, subcategory: string) => void;
-  submitItemRequest: (request: Omit<ItemRequest, 'id' | 'userId' | 'status' | 'moderationStatus' | 'createdAt'>) => void;
-  updateItemRequest: (requestId: string, updates: Partial<ItemRequest>) => void;
-  deleteItemRequest: (requestId: string) => void;
-  approveItemRequest: (requestId: string) => void;
-  rejectItemRequest: (requestId: string, note: string) => void;
-  createDonationListing: (listing: Omit<DonationListing, 'id' | 'userId' | 'status' | 'createdAt'>) => void;
-}
-
-const AuthContext = createContext<AuthContextType | undefined>(undefined);
-
-const DEFAULT_CATEGORIES = [
-  { name: 'Clothing', subcategories: ['Men', 'Women', 'Children', 'Accessories'] },
-  { name: 'Electronics', subcategories: ['Phones', 'Computers', 'Appliances', 'Audio'] },
-  { name: 'Furniture', subcategories: ['Living Room', 'Bedroom', 'Office', 'Outdoor'] },
-  { name: 'Books', subcategories: ['Fiction', 'Non-fiction', 'Educational', 'Children'] },
-  { name: 'Toys', subcategories: ['Board Games', 'Outdoor', 'Educational', 'Stuffed Animals'] },
-  { name: 'Kitchen', subcategories: ['Cookware', 'Utensils', 'Appliances', 'Storage'] },
-  { name: 'Sports', subcategories: ['Equipment', 'Clothing', 'Accessories'] },
-  { name: 'Baby Items', subcategories: ['Clothing', 'Gear', 'Toys', 'Feeding'] },
-];
-
-export const AuthProvider = ({ children }: { children: ReactNode }) => {
-  const [user, setUser] = useState<User | null>(null);
-  const [users, setUsers] = useState<User[]>([]);
-  const [organizations, setOrganizations] = useState<Organization[]>([]);
-  const [categoryProposals, setCategoryProposals] = useState<CategoryProposal[]>([]);
-  const [itemRequests, setItemRequests] = useState<ItemRequest[]>([]);
-  const [donationListings, setDonationListings] = useState<DonationListing[]>([]);
-  const [categories, setCategories] = useState(DEFAULT_CATEGORIES);
-
-  useEffect(() => {
-    const storedUser = localStorage.getItem('givelocal_user');
-    const storedUsers = localStorage.getItem('givelocal_users');
-    const storedOrgs = localStorage.getItem('givelocal_organizations');
-    const storedProposals = localStorage.getItem('givelocal_proposals');
-    const storedCategories = localStorage.getItem('givelocal_categories');
-    const storedItemRequests = localStorage.getItem('givelocal_item_requests');
-    const storedDonationListings = localStorage.getItem('givelocal_donation_listings');
-
-    if (storedUser) setUser(JSON.parse(storedUser));
-    if (storedUsers) setUsers(JSON.parse(storedUsers));
-    if (storedOrgs) setOrganizations(JSON.parse(storedOrgs));
-    if (storedProposals) setCategoryProposals(JSON.parse(storedProposals));
-    if (storedCategories) setCategories(JSON.parse(storedCategories));
-    if (storedItemRequests) setItemRequests(JSON.parse(storedItemRequests));
-    if (storedDonationListings) setDonationListings(JSON.parse(storedDonationListings));
-
-    // Create default admin if none exists
-    if (!storedUsers || JSON.parse(storedUsers).length === 0) {
-      const defaultAdmin: User = {
-        id: 'admin-1',
-        email: 'admin@givelocal.sg',
-        name: 'Admin',
-        role: 'admin',
-        status: 'active',
-        createdAt: new Date().toISOString(),
-        isBanned: false,
-      };
-      setUsers([defaultAdmin]);
-      localStorage.setItem('givelocal_users', JSON.stringify([defaultAdmin]));
-      localStorage.setItem('givelocal_passwords', JSON.stringify({ 'admin@givelocal.sg': 'admin123' }));
-    }
-  }, []);
-
-  const saveToStorage = (key: string, data: unknown) => {
-    localStorage.setItem(key, JSON.stringify(data));
-  };
-
-  const login = async (email: string, password: string): Promise<{ success: boolean; error?: string }> => {
-    const passwords = JSON.parse(localStorage.getItem('givelocal_passwords') || '{}');
-    const foundUser = users.find(u => u.email === email);
-
-    if (!foundUser) {
-      return { success: false, error: 'User not found' };
-    }
-
-    if (foundUser.isBanned) {
-      return { success: false, error: 'Account has been banned' };
-    }
-
-    if (passwords[email] !== password) {
-      return { success: false, error: 'Invalid password' };
-    }
-
-    // Check if user requires approval
-    if (foundUser.role === 'beneficiary' && foundUser.status === 'pending') {
-      return { success: false, error: 'Your account is pending verification. Please wait for admin approval.' };
-    }
-
-    if (foundUser.role === 'beneficiary' && foundUser.status === 'rejected') {
-      return { success: false, error: 'Your verification was rejected. Please contact support.' };
-    }
-
-    if (foundUser.role === 'organization') {
-      const org = organizations.find(o => o.userId === foundUser.id);
-      if (org?.status === 'pending') {
-        return { success: false, error: 'Your organization is pending verification. Please wait for admin approval.' };
-      }
-      if (org?.status === 'rejected') {
-        return { success: false, error: 'Your organization verification was rejected. Please contact support.' };
-      }
-    }
-
-    setUser(foundUser);
-    saveToStorage('givelocal_user', foundUser);
-    return { success: true };
-  };
-
-  const signup = async (
-    email: string, 
-    password: string, 
-    name: string, 
+  signup: (
+    email: string,
+    password: string,
+    name: string,
     role: UserRole,
     verificationDocument?: string,
     verificationDocumentName?: string,
     beneficiaryDetails?: { nric: string; address: string; birthdate: string }
+  ) => Promise<{ success: boolean; error?: string }>;
+  logout: () => Promise<void>;
+  refreshUserData: () => Promise<void>;
+  // Admin functions
+  resetPassword: (userId: string) => Promise<void>;
+  banUser: (userId: string) => Promise<void>;
+  unbanUser: (userId: string) => Promise<void>;
+  deleteUser: (userId: string) => Promise<void>;
+  approveUser: (userId: string) => Promise<void>;
+  rejectUser: (userId: string) => Promise<void>;
+  approveOrganization: (orgId: string) => Promise<void>;
+  rejectOrganization: (orgId: string) => Promise<void>;
+  // Organization functions
+  updateOrganization: (updates: Partial<Organization>) => Promise<void>;
+  submitCategoryProposal: (proposal: Omit<CategoryProposal, 'id' | 'status' | 'created_at'>) => Promise<void>;
+  reviewCategoryProposal: (proposalId: string, status: 'approved' | 'rejected') => Promise<void>;
+  // Category functions
+  addCategory: (name: string) => Promise<void>;
+  updateCategory: (oldName: string, newName: string) => Promise<void>;
+  deleteCategory: (name: string) => Promise<void>;
+  addSubcategory: (categoryName: string, subcategory: string) => Promise<void>;
+  updateSubcategory: (categoryName: string, oldSubcategory: string, newSubcategory: string) => Promise<void>;
+  deleteSubcategory: (categoryName: string, subcategory: string) => Promise<void>;
+  // Item request functions
+  submitItemRequest: (request: Partial<ItemRequest> & { title: string; description: string; category: string; location: string; urgency: 'low' | 'medium' | 'high' }) => Promise<void>;
+  updateItemRequest: (requestId: string, updates: Partial<ItemRequest>) => Promise<void>;
+  deleteItemRequest: (requestId: string) => Promise<void>;
+  approveItemRequest: (requestId: string) => Promise<void>;
+  rejectItemRequest: (requestId: string, note: string) => Promise<void>;
+  // Donation listing functions
+  createDonationListing: (listing: Partial<DonationListing> & { title: string; description: string; category: string; condition: string }) => Promise<void>;
+}
+
+const AuthContext = createContext<AuthContextType | undefined>(undefined);
+
+export const AuthProvider = ({ children }: { children: ReactNode }) => {
+  const [authUser, setAuthUser] = useState<User | null>(null);
+  const [session, setSession] = useState<Session | null>(null);
+  const [profile, setProfile] = useState<Profile | null>(null);
+  const [userRole, setUserRole] = useState<UserRole | null>(null);
+  const [organization, setOrganization] = useState<Organization | null>(null);
+  const [organizations, setOrganizations] = useState<Organization[]>([]);
+  const [users, setUsers] = useState<ExtendedUser[]>([]);
+  const [categories, setCategories] = useState<Category[]>([]);
+  const [categoryProposals, setCategoryProposals] = useState<CategoryProposal[]>([]);
+  const [itemRequests, setItemRequests] = useState<ItemRequest[]>([]);
+  const [donationListings, setDonationListings] = useState<DonationListing[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  // Derived user object for compatibility
+  const user: ExtendedUser | null = profile && userRole ? {
+    id: profile.id,
+    email: profile.email,
+    name: profile.name,
+    role: userRole,
+    status: profile.status,
+    isBanned: profile.is_banned,
+    verificationDocument: profile.verification_document,
+    verificationDocumentName: profile.verification_document_name,
+    nric: profile.nric,
+    address: profile.address,
+    birthdate: profile.birthdate,
+    declarationAgreed: profile.declaration_agreed,
+    createdAt: profile.created_at,
+  } : null;
+
+  // Fetch all data functions
+  const fetchCategories = useCallback(async () => {
+    const { data } = await supabase.from('categories').select('*').order('name');
+    if (data) {
+      setCategories(data.map(c => ({ id: c.id, name: c.name, subcategories: c.subcategories || [] })));
+    }
+  }, []);
+
+  const fetchOrganizations = useCallback(async () => {
+    const { data } = await supabase.from('organizations').select('*').order('created_at', { ascending: false });
+    if (data) {
+      setOrganizations(data.map(o => ({
+        ...o,
+        userId: o.user_id,
+        acceptedCategories: o.accepted_categories,
+        rejectedCategories: o.rejected_categories,
+        createdAt: o.created_at,
+        verificationDocument: o.verification_document,
+        verificationDocumentName: o.verification_document_name,
+      })) as unknown as Organization[]);
+    }
+  }, []);
+
+  const fetchUsers = useCallback(async () => {
+    const { data: profiles } = await supabase.from('profiles').select('*').order('created_at', { ascending: false });
+    const { data: roles } = await supabase.from('user_roles').select('*');
+    
+    if (profiles && roles) {
+      const usersWithRoles = profiles.map(p => {
+        const userRoleData = roles.find(r => r.user_id === p.id);
+        return {
+          id: p.id,
+          email: p.email,
+          name: p.name,
+          role: (userRoleData?.role || 'user') as UserRole,
+          status: p.status as UserStatus,
+          isBanned: p.is_banned,
+          verificationDocument: p.verification_document,
+          verificationDocumentName: p.verification_document_name,
+          nric: p.nric,
+          address: p.address,
+          birthdate: p.birthdate,
+          declarationAgreed: p.declaration_agreed,
+          createdAt: p.created_at,
+        };
+      });
+      setUsers(usersWithRoles);
+    }
+  }, []);
+
+  const fetchCategoryProposals = useCallback(async () => {
+    const { data } = await supabase.from('category_proposals').select('*').order('created_at', { ascending: false });
+    if (data) {
+      const proposalsWithNames = await Promise.all(data.map(async (p) => {
+        const { data: org } = await supabase.from('organizations').select('name').eq('id', p.organization_id).single();
+        return {
+          ...p,
+          organizationId: p.organization_id,
+          organizationName: org?.name || 'Unknown',
+          categoryName: p.category_name,
+          createdAt: p.created_at,
+        } as CategoryProposal;
+      }));
+      setCategoryProposals(proposalsWithNames);
+    }
+  }, []);
+
+  const fetchItemRequests = useCallback(async () => {
+    const { data } = await supabase.from('item_requests').select('*').order('created_at', { ascending: false });
+    if (data) {
+      setItemRequests(data.map(r => ({
+        ...r,
+        userId: r.user_id,
+        isCustomCategory: r.is_custom_category,
+        moderationStatus: r.moderation_status,
+        moderationNote: r.moderation_note,
+        createdAt: r.created_at,
+      })) as unknown as ItemRequest[]);
+    }
+  }, []);
+
+  const fetchDonationListings = useCallback(async () => {
+    const { data } = await supabase.from('donation_listings').select('*').order('created_at', { ascending: false });
+    if (data) {
+      setDonationListings(data.map(l => ({
+        ...l,
+        userId: l.user_id,
+        pickupLocation: l.pickup_location,
+        createdAt: l.created_at,
+      })) as unknown as DonationListing[]);
+    }
+  }, []);
+
+  const fetchUserData = useCallback(async (userId: string) => {
+    try {
+      const { data: profileData } = await supabase.from('profiles').select('*').eq('id', userId).maybeSingle();
+      if (profileData) {
+        setProfile(profileData as unknown as Profile);
+      }
+
+      const { data: roleData } = await supabase.from('user_roles').select('role').eq('user_id', userId).maybeSingle();
+      if (roleData) {
+        setUserRole(roleData.role as UserRole);
+
+        if (roleData.role === 'organization') {
+          const { data: orgData } = await supabase.from('organizations').select('*').eq('user_id', userId).maybeSingle();
+          if (orgData) {
+            setOrganization(orgData as unknown as Organization);
+          }
+        }
+      }
+    } catch (error) {
+      console.error('Error fetching user data:', error);
+    }
+  }, []);
+
+  const fetchAllData = useCallback(async () => {
+    await Promise.all([
+      fetchCategories(),
+      fetchOrganizations(),
+      fetchUsers(),
+      fetchCategoryProposals(),
+      fetchItemRequests(),
+      fetchDonationListings(),
+    ]);
+  }, [fetchCategories, fetchOrganizations, fetchUsers, fetchCategoryProposals, fetchItemRequests, fetchDonationListings]);
+
+  useEffect(() => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      setSession(session);
+      setAuthUser(session?.user ?? null);
+
+      if (session?.user) {
+        setTimeout(() => {
+          fetchUserData(session.user.id);
+          fetchAllData();
+        }, 0);
+      } else {
+        setProfile(null);
+        setUserRole(null);
+        setOrganization(null);
+      }
+    });
+
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setSession(session);
+      setAuthUser(session?.user ?? null);
+      if (session?.user) {
+        fetchUserData(session.user.id);
+      }
+      fetchAllData();
+      setLoading(false);
+    });
+
+    return () => subscription.unsubscribe();
+  }, [fetchUserData, fetchAllData]);
+
+  // Auth functions
+  const login = async (email: string, password: string): Promise<{ success: boolean; error?: string }> => {
+    try {
+      const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+      if (error) return { success: false, error: error.message };
+
+      if (data.user) {
+        const { data: profileData } = await supabase.from('profiles').select('is_banned, status').eq('id', data.user.id).single();
+        if (profileData?.is_banned) {
+          await supabase.auth.signOut();
+          return { success: false, error: 'Account has been banned' };
+        }
+        if (profileData?.status === 'pending') {
+          await supabase.auth.signOut();
+          return { success: false, error: 'Your account is pending verification. Please wait for admin approval.' };
+        }
+        if (profileData?.status === 'rejected') {
+          await supabase.auth.signOut();
+          return { success: false, error: 'Your verification was rejected. Please contact support.' };
+        }
+      }
+      return { success: true };
+    } catch {
+      return { success: false, error: 'An error occurred during login' };
+    }
+  };
+
+  const signup = async (
+    email: string, password: string, name: string, role: UserRole,
+    verificationDocument?: string, verificationDocumentName?: string,
+    beneficiaryDetails?: { nric: string; address: string; birthdate: string }
   ): Promise<{ success: boolean; error?: string }> => {
-    if (users.find(u => u.email === email)) {
-      return { success: false, error: 'Email already registered' };
+    try {
+      const { data, error } = await supabase.auth.signUp({
+        email, password,
+        options: { emailRedirectTo: `${window.location.origin}/`, data: { name, role } }
+      });
+      if (error) return { success: false, error: error.message };
+
+      await new Promise(resolve => setTimeout(resolve, 500));
+
+      if (data.user) {
+        if (role === 'beneficiary' && beneficiaryDetails) {
+          await supabase.from('profiles').update({
+            verification_document: verificationDocument,
+            verification_document_name: verificationDocumentName,
+            nric: beneficiaryDetails.nric,
+            address: beneficiaryDetails.address,
+            birthdate: beneficiaryDetails.birthdate,
+            declaration_agreed: true,
+          }).eq('id', data.user.id);
+        }
+
+        if (role === 'organization') {
+          await supabase.from('organizations').insert({
+            user_id: data.user.id, name,
+            verification_document: verificationDocument,
+            verification_document_name: verificationDocumentName,
+          });
+        }
+      }
+
+      if (role === 'beneficiary' || role === 'organization') {
+        await supabase.auth.signOut();
+      }
+
+      return { success: true };
+    } catch {
+      return { success: false, error: 'An error occurred during signup' };
     }
-
-    // Determine initial status based on role
-    const requiresApproval = role === 'beneficiary' || role === 'organization';
-    const initialStatus: UserStatus = requiresApproval ? 'pending' : 'active';
-
-    const newUser: User = {
-      id: `user-${Date.now()}`,
-      email,
-      name,
-      role,
-      status: initialStatus,
-      verificationDocument: role === 'beneficiary' ? verificationDocument : undefined,
-      verificationDocumentName: role === 'beneficiary' ? verificationDocumentName : undefined,
-      // Beneficiary-specific fields
-      nric: role === 'beneficiary' ? beneficiaryDetails?.nric : undefined,
-      address: role === 'beneficiary' ? beneficiaryDetails?.address : undefined,
-      birthdate: role === 'beneficiary' ? beneficiaryDetails?.birthdate : undefined,
-      declarationAgreed: role === 'beneficiary' ? true : undefined,
-      createdAt: new Date().toISOString(),
-      isBanned: false,
-    };
-
-    const updatedUsers = [...users, newUser];
-    setUsers(updatedUsers);
-    saveToStorage('givelocal_users', updatedUsers);
-
-    const passwords = JSON.parse(localStorage.getItem('givelocal_passwords') || '{}');
-    passwords[email] = password;
-    saveToStorage('givelocal_passwords', passwords);
-
-    if (role === 'organization') {
-      const newOrg: Organization = {
-        id: `org-${Date.now()}`,
-        userId: newUser.id,
-        name: name,
-        description: '',
-        acceptedCategories: [],
-        rejectedCategories: [],
-        subcategoryPreferences: [],
-        proposedCategories: [],
-        status: 'pending',
-        verificationDocument,
-        verificationDocumentName,
-        createdAt: new Date().toISOString(),
-      };
-      const updatedOrgs = [...organizations, newOrg];
-      setOrganizations(updatedOrgs);
-      saveToStorage('givelocal_organizations', updatedOrgs);
-    }
-
-    // Don't auto-login users that require approval
-    if (!requiresApproval) {
-      setUser(newUser);
-      saveToStorage('givelocal_user', newUser);
-    }
-
-    return { success: true };
   };
 
-  const logout = () => {
-    setUser(null);
-    localStorage.removeItem('givelocal_user');
+  const logout = async () => {
+    await supabase.auth.signOut();
+    setAuthUser(null);
+    setSession(null);
+    setProfile(null);
+    setUserRole(null);
+    setOrganization(null);
   };
 
-  const resetPassword = (userId: string) => {
+  const refreshUserData = async () => {
+    if (authUser) await fetchUserData(authUser.id);
+    await fetchAllData();
+  };
+
+  // Admin functions
+  const resetPassword = async (userId: string) => {
     const targetUser = users.find(u => u.id === userId);
     if (targetUser) {
-      const passwords = JSON.parse(localStorage.getItem('givelocal_passwords') || '{}');
-      passwords[targetUser.email] = 'reset123';
-      saveToStorage('givelocal_passwords', passwords);
+      // Note: In production, use Supabase admin API or edge function
+      console.log('Password reset requested for:', targetUser.email);
     }
   };
 
-  const banUser = (userId: string) => {
-    const updatedUsers = users.map(u => 
-      u.id === userId ? { ...u, isBanned: true } : u
-    );
-    setUsers(updatedUsers);
-    saveToStorage('givelocal_users', updatedUsers);
+  const banUser = async (userId: string) => {
+    await supabase.from('profiles').update({ is_banned: true }).eq('id', userId);
+    await fetchUsers();
   };
 
-  const unbanUser = (userId: string) => {
-    const updatedUsers = users.map(u => 
-      u.id === userId ? { ...u, isBanned: false } : u
-    );
-    setUsers(updatedUsers);
-    saveToStorage('givelocal_users', updatedUsers);
+  const unbanUser = async (userId: string) => {
+    await supabase.from('profiles').update({ is_banned: false }).eq('id', userId);
+    await fetchUsers();
   };
 
-  const deleteUser = (userId: string) => {
-    const targetUser = users.find(u => u.id === userId);
-    if (!targetUser || targetUser.role === 'admin') return;
+  const deleteUser = async (userId: string) => {
+    // Note: Deleting from auth.users requires admin API
+    await supabase.from('profiles').delete().eq('id', userId);
+    await fetchAllData();
+  };
 
-    // Delete user
-    const updatedUsers = users.filter(u => u.id !== userId);
-    setUsers(updatedUsers);
-    saveToStorage('givelocal_users', updatedUsers);
+  const approveUser = async (userId: string) => {
+    await supabase.from('profiles').update({ status: 'active' }).eq('id', userId);
+    await fetchUsers();
+  };
 
-    // Delete password
-    const passwords = JSON.parse(localStorage.getItem('givelocal_passwords') || '{}');
-    delete passwords[targetUser.email];
-    saveToStorage('givelocal_passwords', passwords);
+  const rejectUser = async (userId: string) => {
+    await supabase.from('profiles').update({ status: 'rejected' }).eq('id', userId);
+    await fetchUsers();
+  };
 
-    // Delete organization if exists
-    const updatedOrgs = organizations.filter(o => o.userId !== userId);
-    setOrganizations(updatedOrgs);
-    saveToStorage('givelocal_organizations', updatedOrgs);
-
-    // Delete category proposals from this user's organization
-    const userOrg = organizations.find(o => o.userId === userId);
-    if (userOrg) {
-      const updatedProposals = categoryProposals.filter(p => p.organizationId !== userOrg.id);
-      setCategoryProposals(updatedProposals);
-      saveToStorage('givelocal_proposals', updatedProposals);
+  const approveOrganization = async (orgId: string) => {
+    const org = organizations.find(o => o.id === orgId);
+    await supabase.from('organizations').update({ status: 'approved' }).eq('id', orgId);
+    if (org) {
+      await supabase.from('profiles').update({ status: 'active' }).eq('id', org.user_id);
     }
-
-    // Delete item requests
-    const updatedRequests = itemRequests.filter(r => r.userId !== userId);
-    setItemRequests(updatedRequests);
-    saveToStorage('givelocal_item_requests', updatedRequests);
-
-    // Delete donation listings
-    const updatedListings = donationListings.filter(l => l.userId !== userId);
-    setDonationListings(updatedListings);
-    saveToStorage('givelocal_donation_listings', updatedListings);
+    await fetchAllData();
   };
 
-  const approveUser = (userId: string) => {
-    const updatedUsers = users.map(u => 
-      u.id === userId ? { ...u, status: 'active' as UserStatus } : u
-    );
-    setUsers(updatedUsers);
-    saveToStorage('givelocal_users', updatedUsers);
+  const rejectOrganization = async (orgId: string) => {
+    const org = organizations.find(o => o.id === orgId);
+    await supabase.from('organizations').update({ status: 'rejected' }).eq('id', orgId);
+    if (org) {
+      await supabase.from('profiles').update({ status: 'rejected' }).eq('id', org.user_id);
+    }
+    await fetchAllData();
   };
 
-  const rejectUser = (userId: string) => {
-    const updatedUsers = users.map(u => 
-      u.id === userId ? { ...u, status: 'rejected' as UserStatus } : u
-    );
-    setUsers(updatedUsers);
-    saveToStorage('givelocal_users', updatedUsers);
+  // Organization functions
+  const updateOrganization = async (updates: Partial<Organization>) => {
+    if (!organization) return;
+    await supabase.from('organizations').update(updates).eq('id', organization.id);
+    await fetchOrganizations();
+    if (authUser) await fetchUserData(authUser.id);
   };
 
-  const updateOrganization = (orgUpdate: Partial<Organization>) => {
-    const updatedOrgs = organizations.map(org =>
-      org.userId === user?.id ? { ...org, ...orgUpdate } : org
-    );
-    setOrganizations(updatedOrgs);
-    saveToStorage('givelocal_organizations', updatedOrgs);
+  const submitCategoryProposal = async (proposal: Omit<CategoryProposal, 'id' | 'status' | 'created_at'>) => {
+    await supabase.from('category_proposals').insert({
+      organization_id: proposal.organization_id,
+      category_name: proposal.category_name || proposal.categoryName,
+      subcategory: proposal.subcategory,
+      description: proposal.description,
+    });
+    await fetchCategoryProposals();
   };
 
-  const submitCategoryProposal = (proposal: Omit<CategoryProposal, 'id' | 'status' | 'createdAt'>) => {
-    const newProposal: CategoryProposal = {
-      ...proposal,
-      id: `proposal-${Date.now()}`,
-      status: 'pending',
-      createdAt: new Date().toISOString(),
-    };
-    const updatedProposals = [...categoryProposals, newProposal];
-    setCategoryProposals(updatedProposals);
-    saveToStorage('givelocal_proposals', updatedProposals);
-  };
-
-  const reviewCategoryProposal = (proposalId: string, status: 'approved' | 'rejected') => {
+  const reviewCategoryProposal = async (proposalId: string, status: 'approved' | 'rejected') => {
     const proposal = categoryProposals.find(p => p.id === proposalId);
-    
+    await supabase.from('category_proposals').update({ status }).eq('id', proposalId);
+
     if (status === 'approved' && proposal) {
-      const existingCategory = categories.find(c => c.name === proposal.categoryName);
+      const categoryName = proposal.category_name || proposal.categoryName;
+      const existingCategory = categories.find(c => c.name === categoryName);
+      
       if (existingCategory && proposal.subcategory) {
-        const updatedCategories = categories.map(c =>
-          c.name === proposal.categoryName
-            ? { ...c, subcategories: [...c.subcategories, proposal.subcategory!] }
-            : c
-        );
-        setCategories(updatedCategories);
-        saveToStorage('givelocal_categories', updatedCategories);
+        await supabase.from('categories').update({
+          subcategories: [...existingCategory.subcategories, proposal.subcategory]
+        }).eq('id', existingCategory.id);
       } else if (!existingCategory) {
-        const newCategory = {
-          name: proposal.categoryName,
+        await supabase.from('categories').insert({
+          name: categoryName,
           subcategories: proposal.subcategory ? [proposal.subcategory] : [],
-        };
-        const updatedCategories = [...categories, newCategory];
-        setCategories(updatedCategories);
-        saveToStorage('givelocal_categories', updatedCategories);
+        });
       }
     }
-
-    const updatedProposals = categoryProposals.map(p =>
-      p.id === proposalId ? { ...p, status } : p
-    );
-    setCategoryProposals(updatedProposals);
-    saveToStorage('givelocal_proposals', updatedProposals);
+    await fetchAllData();
   };
 
-  const approveOrganization = (orgId: string) => {
-    const updatedOrgs = organizations.map(org =>
-      org.id === orgId ? { ...org, status: 'approved' as const } : org
-    );
-    setOrganizations(updatedOrgs);
-    saveToStorage('givelocal_organizations', updatedOrgs);
+  // Category functions
+  const addCategory = async (name: string) => {
+    await supabase.from('categories').insert({ name, subcategories: [] });
+    await fetchCategories();
+  };
 
-    // Also update user status
-    const org = organizations.find(o => o.id === orgId);
-    if (org) {
-      const updatedUsers = users.map(u =>
-        u.id === org.userId ? { ...u, status: 'active' as UserStatus } : u
-      );
-      setUsers(updatedUsers);
-      saveToStorage('givelocal_users', updatedUsers);
+  const updateCategory = async (oldName: string, newName: string) => {
+    const cat = categories.find(c => c.name === oldName);
+    if (cat?.id) {
+      await supabase.from('categories').update({ name: newName }).eq('id', cat.id);
+      await fetchCategories();
     }
   };
 
-  const rejectOrganization = (orgId: string) => {
-    const updatedOrgs = organizations.map(org =>
-      org.id === orgId ? { ...org, status: 'rejected' as const } : org
-    );
-    setOrganizations(updatedOrgs);
-    saveToStorage('givelocal_organizations', updatedOrgs);
-
-    // Also update user status
-    const org = organizations.find(o => o.id === orgId);
-    if (org) {
-      const updatedUsers = users.map(u =>
-        u.id === org.userId ? { ...u, status: 'rejected' as UserStatus } : u
-      );
-      setUsers(updatedUsers);
-      saveToStorage('givelocal_users', updatedUsers);
+  const deleteCategory = async (name: string) => {
+    const cat = categories.find(c => c.name === name);
+    if (cat?.id) {
+      await supabase.from('categories').delete().eq('id', cat.id);
+      await fetchCategories();
     }
   };
 
-  const addCategory = (name: string) => {
-    if (categories.find(c => c.name === name)) return;
-    const updatedCategories = [...categories, { name, subcategories: [] }];
-    setCategories(updatedCategories);
-    saveToStorage('givelocal_categories', updatedCategories);
+  const addSubcategory = async (categoryName: string, subcategory: string) => {
+    const cat = categories.find(c => c.name === categoryName);
+    if (cat?.id) {
+      await supabase.from('categories').update({
+        subcategories: [...cat.subcategories, subcategory]
+      }).eq('id', cat.id);
+      await fetchCategories();
+    }
   };
 
-  const updateCategory = (oldName: string, newName: string) => {
-    const updatedCategories = categories.map(c =>
-      c.name === oldName ? { ...c, name: newName } : c
-    );
-    setCategories(updatedCategories);
-    saveToStorage('givelocal_categories', updatedCategories);
+  const updateSubcategory = async (categoryName: string, oldSubcategory: string, newSubcategory: string) => {
+    const cat = categories.find(c => c.name === categoryName);
+    if (cat?.id) {
+      await supabase.from('categories').update({
+        subcategories: cat.subcategories.map(s => s === oldSubcategory ? newSubcategory : s)
+      }).eq('id', cat.id);
+      await fetchCategories();
+    }
   };
 
-  const deleteCategory = (name: string) => {
-    const updatedCategories = categories.filter(c => c.name !== name);
-    setCategories(updatedCategories);
-    saveToStorage('givelocal_categories', updatedCategories);
+  const deleteSubcategory = async (categoryName: string, subcategory: string) => {
+    const cat = categories.find(c => c.name === categoryName);
+    if (cat?.id) {
+      await supabase.from('categories').update({
+        subcategories: cat.subcategories.filter(s => s !== subcategory)
+      }).eq('id', cat.id);
+      await fetchCategories();
+    }
   };
 
-  const addSubcategory = (categoryName: string, subcategory: string) => {
-    const updatedCategories = categories.map(c =>
-      c.name === categoryName && !c.subcategories.includes(subcategory)
-        ? { ...c, subcategories: [...c.subcategories, subcategory] }
-        : c
-    );
-    setCategories(updatedCategories);
-    saveToStorage('givelocal_categories', updatedCategories);
-  };
-
-  const updateSubcategory = (categoryName: string, oldSubcategory: string, newSubcategory: string) => {
-    const updatedCategories = categories.map(c =>
-      c.name === categoryName
-        ? { ...c, subcategories: c.subcategories.map(s => s === oldSubcategory ? newSubcategory : s) }
-        : c
-    );
-    setCategories(updatedCategories);
-    saveToStorage('givelocal_categories', updatedCategories);
-  };
-
-  const deleteSubcategory = (categoryName: string, subcategory: string) => {
-    const updatedCategories = categories.map(c =>
-      c.name === categoryName
-        ? { ...c, subcategories: c.subcategories.filter(s => s !== subcategory) }
-        : c
-    );
-    setCategories(updatedCategories);
-    saveToStorage('givelocal_categories', updatedCategories);
-  };
-
-  const submitItemRequest = (request: Omit<ItemRequest, 'id' | 'userId' | 'status' | 'moderationStatus' | 'createdAt'>) => {
-    if (!user) return;
-    
-    // Check if category is from approved list
-    const isApprovedCategory = categories.some(cat => cat.name === request.category);
-    
-    const newRequest: ItemRequest = {
-      ...request,
-      id: `request-${Date.now()}`,
-      userId: user.id,
-      isCustomCategory: !isApprovedCategory,
+  // Item request functions
+  const submitItemRequest = async (request: Partial<ItemRequest> & { title: string; description: string; category: string; location: string; urgency: 'low' | 'medium' | 'high' }) => {
+    if (!authUser) return;
+    const isApproved = categories.some(c => c.name === request.category);
+    await supabase.from('item_requests').insert({
+      title: request.title,
+      description: request.description,
+      category: request.category,
+      location: request.location,
+      urgency: request.urgency,
+      user_id: authUser.id,
+      is_custom_category: !isApproved,
       status: 'active',
-      // Auto-approve if it's an approved category, otherwise require moderation
-      moderationStatus: isApprovedCategory ? 'approved' : 'pending',
-      createdAt: new Date().toISOString(),
-    };
-    const updatedRequests = [...itemRequests, newRequest];
-    setItemRequests(updatedRequests);
-    saveToStorage('givelocal_item_requests', updatedRequests);
+      moderation_status: isApproved ? 'approved' : 'pending',
+    });
+    await fetchItemRequests();
   };
 
-  const updateItemRequest = (requestId: string, updates: Partial<ItemRequest>) => {
-    const updatedRequests = itemRequests.map(req =>
-      req.id === requestId ? { ...req, ...updates } : req
-    );
-    setItemRequests(updatedRequests);
-    saveToStorage('givelocal_item_requests', updatedRequests);
+  const updateItemRequest = async (requestId: string, updates: Partial<ItemRequest>) => {
+    const dbUpdates: Record<string, unknown> = { ...updates };
+    if (updates.moderationStatus) dbUpdates.moderation_status = updates.moderationStatus;
+    if (updates.moderationNote) dbUpdates.moderation_note = updates.moderationNote;
+    await supabase.from('item_requests').update(dbUpdates).eq('id', requestId);
+    await fetchItemRequests();
   };
 
-  const deleteItemRequest = (requestId: string) => {
-    const updatedRequests = itemRequests.filter(req => req.id !== requestId);
-    setItemRequests(updatedRequests);
-    saveToStorage('givelocal_item_requests', updatedRequests);
+  const deleteItemRequest = async (requestId: string) => {
+    await supabase.from('item_requests').delete().eq('id', requestId);
+    await fetchItemRequests();
   };
 
-  const approveItemRequest = (requestId: string) => {
-    const updatedRequests = itemRequests.map(req =>
-      req.id === requestId ? { ...req, moderationStatus: 'approved' as const, moderationNote: undefined } : req
-    );
-    setItemRequests(updatedRequests);
-    saveToStorage('givelocal_item_requests', updatedRequests);
+  const approveItemRequest = async (requestId: string) => {
+    await supabase.from('item_requests').update({ moderation_status: 'approved', moderation_note: null }).eq('id', requestId);
+    await fetchItemRequests();
   };
 
-  const rejectItemRequest = (requestId: string, note: string) => {
-    const updatedRequests = itemRequests.map(req =>
-      req.id === requestId ? { ...req, moderationStatus: 'rejected' as const, moderationNote: note } : req
-    );
-    setItemRequests(updatedRequests);
-    saveToStorage('givelocal_item_requests', updatedRequests);
+  const rejectItemRequest = async (requestId: string, note: string) => {
+    await supabase.from('item_requests').update({ moderation_status: 'rejected', moderation_note: note }).eq('id', requestId);
+    await fetchItemRequests();
   };
 
-  const createDonationListing = (listing: Omit<DonationListing, 'id' | 'userId' | 'status' | 'createdAt'>) => {
-    if (!user) return;
-    
-    const newListing: DonationListing = {
-      ...listing,
-      id: `listing-${Date.now()}`,
-      userId: user.id,
-      status: 'available',
-      createdAt: new Date().toISOString(),
-    };
-    const updatedListings = [...donationListings, newListing];
-    setDonationListings(updatedListings);
-    saveToStorage('givelocal_donation_listings', updatedListings);
+  // Donation listing functions
+  const createDonationListing = async (listing: Partial<DonationListing> & { title: string; description: string; category: string; condition: string }) => {
+    if (!authUser) return;
+    await supabase.from('donation_listings').insert({
+      title: listing.title,
+      description: listing.description,
+      category: listing.category,
+      subcategory: listing.subcategory,
+      condition: listing.condition,
+      images: listing.images || [],
+      pickup_location: listing.pickup_location || listing.pickupLocation || '',
+      user_id: authUser.id,
+    });
+    await fetchDonationListings();
   };
 
   return (
     <AuthContext.Provider value={{
-      user,
-      users,
-      organizations,
-      categoryProposals,
-      itemRequests,
-      donationListings,
-      categories,
-      login,
-      signup,
-      logout,
-      resetPassword,
-      banUser,
-      unbanUser,
-      deleteUser,
-      approveUser,
-      rejectUser,
-      updateOrganization,
-      submitCategoryProposal,
-      reviewCategoryProposal,
-      approveOrganization,
-      rejectOrganization,
-      addCategory,
-      updateCategory,
-      deleteCategory,
-      addSubcategory,
-      updateSubcategory,
-      deleteSubcategory,
-      submitItemRequest,
-      updateItemRequest,
-      deleteItemRequest,
-      approveItemRequest,
-      rejectItemRequest,
+      user, session, profile, userRole, organization, organizations, users, categories,
+      categoryProposals, itemRequests, donationListings, loading,
+      login, signup, logout, refreshUserData,
+      resetPassword, banUser, unbanUser, deleteUser, approveUser, rejectUser,
+      approveOrganization, rejectOrganization, updateOrganization,
+      submitCategoryProposal, reviewCategoryProposal,
+      addCategory, updateCategory, deleteCategory, addSubcategory, updateSubcategory, deleteSubcategory,
+      submitItemRequest, updateItemRequest, deleteItemRequest, approveItemRequest, rejectItemRequest,
       createDonationListing,
     }}>
       {children}

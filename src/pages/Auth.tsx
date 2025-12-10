@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -15,7 +15,7 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 
 const Auth = () => {
   const navigate = useNavigate();
-  const { login, signup, user } = useAuth();
+  const { login, signup, user, userRole, loading } = useAuth();
   const { toast } = useToast();
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -36,21 +36,22 @@ const Auth = () => {
   const [declarationAgreed, setDeclarationAgreed] = useState(false);
 
   // Redirect if already logged in
-  if (user) {
-    if (user.role === 'admin') {
-      navigate('/admin');
-    } else if (user.role === 'organization') {
-      navigate('/organization');
-    } else {
-      navigate('/');
+  useEffect(() => {
+    if (!loading && user && userRole) {
+      if (userRole === 'admin') {
+        navigate('/admin');
+      } else if (userRole === 'organization') {
+        navigate('/organization');
+      } else {
+        navigate('/');
+      }
     }
-    return null;
-  }
+  }, [user, userRole, loading, navigate]);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
-      // Check file size (max 5MB for localStorage)
+      // Check file size (max 5MB)
       if (file.size > 5 * 1024 * 1024) {
         toast({
           title: 'File too large',
@@ -89,6 +90,17 @@ const Auth = () => {
   const handleSignup = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
+
+    // Validate password length
+    if (signupPassword.length < 6) {
+      toast({
+        title: 'Password too short',
+        description: 'Password must be at least 6 characters long.',
+        variant: 'destructive',
+      });
+      setIsLoading(false);
+      return;
+    }
 
     // Validate document upload for beneficiary and organization
     const requiresDocument = signupRole === 'beneficiary' || signupRole === 'organization';
@@ -157,7 +169,7 @@ const Auth = () => {
       const requiresApproval = signupRole === 'beneficiary' || signupRole === 'organization';
       const message = requiresApproval
         ? 'Your registration is pending approval. You will be notified once verified.'
-        : 'Your account has been created successfully.';
+        : 'Your account has been created successfully. Please check your email to confirm your account.';
       toast({ title: 'Welcome to GiveLocal!', description: message });
       
       // Clear form
@@ -197,6 +209,14 @@ const Auth = () => {
     }
     return '';
   };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-accent/30 via-background to-primary/10 flex items-center justify-center">
+        <div className="animate-pulse text-muted-foreground">Loading...</div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-accent/30 via-background to-primary/10 flex items-center justify-center p-4">
@@ -242,9 +262,6 @@ const Auth = () => {
                 <Button type="submit" className="w-full" disabled={isLoading}>
                   {isLoading ? 'Logging in...' : 'Login'}
                 </Button>
-                <p className="text-xs text-muted-foreground text-center">
-                  Demo admin: admin@givelocal.sg / admin123
-                </p>
               </form>
             </TabsContent>
             
@@ -281,7 +298,9 @@ const Auth = () => {
                     value={signupPassword}
                     onChange={(e) => setSignupPassword(e.target.value)}
                     required
+                    minLength={6}
                   />
+                  <p className="text-xs text-muted-foreground">Minimum 6 characters</p>
                 </div>
                 <div className="space-y-3">
                   <Label>Account Type</Label>
@@ -420,7 +439,7 @@ const Auth = () => {
                     <Alert className="bg-amber-50 border-amber-200">
                       <AlertCircle className="h-4 w-4 text-amber-600" />
                       <AlertDescription className="text-amber-800 text-xs">
-                        Your account will be reviewed by our admin team. You will be able to login once approved.
+                        Your account will require admin approval before you can access all features.
                       </AlertDescription>
                     </Alert>
                   </div>
