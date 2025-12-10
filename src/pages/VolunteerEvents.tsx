@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
@@ -9,11 +9,12 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
 import { useNotifications } from "@/contexts/NotificationContext";
-import { Heart, MapPin, Calendar, Clock, Users, Building2, CheckCircle, Hourglass } from "lucide-react";
+import { useVolunteerEvents } from "@/hooks/useVolunteerEvents";
+import { Heart, MapPin, Calendar, Clock, Users, Building2, CheckCircle, Hourglass, XCircle } from "lucide-react";
 import { format } from "date-fns";
 
 interface VolunteerEvent {
@@ -36,13 +37,13 @@ interface VolunteerEvent {
 interface VolunteerRegistration {
   id: string;
   eventId: string;
-  name: string;
-  email: string;
-  phone: string;
   age: number;
-  experience: string;
   status: "pending" | "approved" | "rejected";
   createdAt: string;
+  eventTitle?: string;
+  eventDate?: string;
+  eventTime?: string;
+  organizationName?: string;
 }
 
 const VolunteerEvents = () => {
@@ -50,6 +51,7 @@ const VolunteerEvents = () => {
   const { toast } = useToast();
   const { addNotification } = useNotifications();
   const navigate = useNavigate();
+  const { registerForEvent, fetchMyRegistrations } = useVolunteerEvents();
 
   const [events, setEvents] = useState<VolunteerEvent[]>([
     {
@@ -150,6 +152,28 @@ const VolunteerEvents = () => {
 
   const [totalVolunteers, setTotalVolunteers] = useState(500);
 
+  // Load user's registrations from database
+  useEffect(() => {
+    const loadMyRegistrations = async () => {
+      if (user) {
+        const data = await fetchMyRegistrations();
+        const mapped = data.map((reg: any) => ({
+          id: reg.id,
+          eventId: reg.event_id,
+          age: reg.age,
+          status: reg.status,
+          createdAt: reg.created_at,
+          eventTitle: reg.volunteer_events?.title,
+          eventDate: reg.volunteer_events?.event_date,
+          eventTime: reg.volunteer_events?.event_time,
+          organizationName: reg.volunteer_events?.organizations?.name,
+        }));
+        setRegistrations(mapped);
+      }
+    };
+    loadMyRegistrations();
+  }, [user]);
+
   const upcomingEvents = events.filter(e => e.status === 'upcoming');
   const fullEvents = events.filter(e => e.status === 'full');
 
@@ -171,10 +195,20 @@ const VolunteerEvents = () => {
   const handleSignupSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!formData.name || !formData.email || !formData.phone || !formData.age) {
+    if (!user) {
+      toast({
+        title: "Login Required",
+        description: "Please log in to register for volunteer events.",
+        variant: "destructive",
+      });
+      navigate('/auth');
+      return;
+    }
+
+    if (!formData.age) {
       toast({
         title: "Missing Information",
-        description: "Please fill in all required fields.",
+        description: "Please enter your age.",
         variant: "destructive",
       });
       return;
@@ -192,25 +226,32 @@ const VolunteerEvents = () => {
 
     setIsSubmitting(true);
 
-    // Simulate API call
-    await new Promise(resolve => setTimeout(resolve, 1500));
+    const { error } = await registerForEvent(selectedEvent!.id, age, formData.experience || undefined);
 
-    // Create registration with pending status (waiting for org approval)
-    const newRegistration: VolunteerRegistration = {
-      id: `reg-${Date.now()}`,
-      eventId: selectedEvent!.id,
-      name: formData.name,
-      email: formData.email,
-      phone: formData.phone,
-      age: age,
-      experience: formData.experience,
-      status: "pending",
-      createdAt: new Date().toISOString(),
-    };
+    if (error) {
+      toast({
+        title: "Registration Failed",
+        description: error.message || "Unable to register. Please try again.",
+        variant: "destructive",
+      });
+      setIsSubmitting(false);
+      return;
+    }
 
-    setRegistrations(prev => [...prev, newRegistration]);
-
-    // Note: In a real implementation, notifications would be created server-side
+    // Reload registrations after successful signup
+    const data = await fetchMyRegistrations();
+    const mapped = data.map((reg: any) => ({
+      id: reg.id,
+      eventId: reg.event_id,
+      age: reg.age,
+      status: reg.status,
+      createdAt: reg.created_at,
+      eventTitle: reg.volunteer_events?.title,
+      eventDate: reg.volunteer_events?.event_date,
+      eventTime: reg.volunteer_events?.event_time,
+      organizationName: reg.volunteer_events?.organizations?.name,
+    }));
+    setRegistrations(mapped);
 
     setIsSubmitting(false);
     setSignupSuccess(true);
@@ -576,6 +617,9 @@ const VolunteerEvents = () => {
               <Hourglass className="w-5 h-5" />
               My Registrations
             </DialogTitle>
+            <DialogDescription>
+              View your volunteer event registrations and their approval status.
+            </DialogDescription>
           </DialogHeader>
           
           {registrations.length === 0 ? (
@@ -586,38 +630,40 @@ const VolunteerEvents = () => {
             </div>
           ) : (
             <div className="space-y-4">
-              {registrations.map((reg) => {
-                const event = events.find(e => e.id === reg.eventId);
-                return (
-                  <Card key={reg.id} className="p-4">
-                    <div className="flex items-start justify-between gap-4">
-                      <div className="flex-1 min-w-0">
-                        <h4 className="font-medium truncate">{event?.title || "Unknown Event"}</h4>
-                        <p className="text-sm text-muted-foreground">{event?.organizationName}</p>
-                        {event && (
-                          <div className="flex items-center gap-2 mt-2 text-sm text-muted-foreground">
-                            <Calendar className="w-3 h-3" />
-                            <span>{format(new Date(event.date), 'MMM d, yyyy')}</span>
-                            <Clock className="w-3 h-3 ml-2" />
-                            <span>{event.startTime}</span>
-                          </div>
-                        )}
-                      </div>
-                      <Badge 
-                        variant={
-                          reg.status === 'approved' ? 'default' : 
-                          reg.status === 'rejected' ? 'destructive' : 
-                          'secondary'
-                        }
-                      >
-                        {reg.status === 'approved' && <CheckCircle className="w-3 h-3 mr-1" />}
-                        {reg.status === 'pending' && <Hourglass className="w-3 h-3 mr-1" />}
-                        {reg.status.charAt(0).toUpperCase() + reg.status.slice(1)}
-                      </Badge>
+              {registrations.map((reg) => (
+                <Card key={reg.id} className="p-4">
+                  <div className="flex items-start justify-between gap-4">
+                    <div className="flex-1 min-w-0">
+                      <h4 className="font-medium truncate">{reg.eventTitle || "Unknown Event"}</h4>
+                      <p className="text-sm text-muted-foreground">{reg.organizationName}</p>
+                      {reg.eventDate && (
+                        <div className="flex items-center gap-2 mt-2 text-sm text-muted-foreground">
+                          <Calendar className="w-3 h-3" />
+                          <span>{format(new Date(reg.eventDate), 'MMM d, yyyy')}</span>
+                          {reg.eventTime && (
+                            <>
+                              <Clock className="w-3 h-3 ml-2" />
+                              <span>{reg.eventTime}</span>
+                            </>
+                          )}
+                        </div>
+                      )}
                     </div>
-                  </Card>
-                );
-              })}
+                    <Badge 
+                      variant={
+                        reg.status === 'approved' ? 'default' : 
+                        reg.status === 'rejected' ? 'destructive' : 
+                        'secondary'
+                      }
+                    >
+                      {reg.status === 'approved' && <CheckCircle className="w-3 h-3 mr-1" />}
+                      {reg.status === 'pending' && <Hourglass className="w-3 h-3 mr-1" />}
+                      {reg.status === 'rejected' && <XCircle className="w-3 h-3 mr-1" />}
+                      {reg.status.charAt(0).toUpperCase() + reg.status.slice(1)}
+                    </Badge>
+                  </div>
+                </Card>
+              ))}
             </div>
           )}
         </DialogContent>

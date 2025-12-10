@@ -74,6 +74,32 @@ export const useVolunteerEvents = () => {
     }
   };
 
+  const fetchMyRegistrations = async () => {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return [];
+
+    const { data, error } = await supabase
+      .from('volunteer_registrations')
+      .select(`
+        *,
+        volunteer_events (
+          id,
+          title,
+          event_date,
+          event_time,
+          location,
+          organizations (name)
+        )
+      `)
+      .eq('user_id', user.id)
+      .order('created_at', { ascending: false });
+
+    if (!error && data) {
+      return data;
+    }
+    return [];
+  };
+
   useEffect(() => {
     fetchEvents();
   }, []);
@@ -178,6 +204,7 @@ export const useVolunteerEvents = () => {
     approveRegistration,
     rejectRegistration,
     fetchRegistrations,
+    fetchMyRegistrations,
     refresh: fetchEvents,
   };
 };
