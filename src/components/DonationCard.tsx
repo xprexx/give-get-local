@@ -84,6 +84,9 @@ const DonationCard = ({ item }: DonationCardProps) => {
     setIsRequestDialogOpen(true);
   };
 
+  // Get today's date in YYYY-MM-DD format for min date validation
+  const today = new Date().toISOString().split('T')[0];
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
@@ -91,6 +94,25 @@ const DonationCard = ({ item }: DonationCardProps) => {
       toast({
         title: "Missing Information",
         description: "Please fill in all required fields.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // Validate dates are not in the past
+    if (formData.preferredDate < today) {
+      toast({
+        title: "Invalid Date",
+        description: "Preferred date cannot be in the past.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (formData.alternativeDate && formData.alternativeDate < today) {
+      toast({
+        title: "Invalid Date",
+        description: "Alternative date cannot be in the past.",
         variant: "destructive",
       });
       return;
@@ -299,6 +321,7 @@ const DonationCard = ({ item }: DonationCardProps) => {
                     <Input
                       id="preferredDate"
                       type="date"
+                      min={today}
                       value={formData.preferredDate}
                       onChange={(e) => setFormData({ ...formData, preferredDate: e.target.value })}
                     />
@@ -322,6 +345,7 @@ const DonationCard = ({ item }: DonationCardProps) => {
                   <Input
                     id="alternativeDate"
                     type="date"
+                    min={today}
                     value={formData.alternativeDate}
                     onChange={(e) => setFormData({ ...formData, alternativeDate: e.target.value })}
                   />
