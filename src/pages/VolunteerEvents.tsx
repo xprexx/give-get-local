@@ -53,8 +53,60 @@ const VolunteerEvents = () => {
   const navigate = useNavigate();
   const { events: dbEvents, loading: eventsLoading, registerForEvent, fetchMyRegistrations } = useVolunteerEvents();
 
-  // Map database events to component interface
-  const events: VolunteerEvent[] = dbEvents.map(e => ({
+  // Sample events for display when database is empty
+  const sampleEvents: VolunteerEvent[] = [
+    {
+      id: "sample-1",
+      organizationId: "sample-org-1",
+      organizationName: "Willing Hearts Singapore",
+      title: "Weekend Meal Preparation",
+      description: "Help prepare and pack meals for elderly and low-income families. No cooking experience required!",
+      location: "8 Lorong 8 Toa Payoh, Singapore 319254",
+      date: "2025-01-15",
+      startTime: "08:00",
+      endTime: "12:00",
+      spotsTotal: 30,
+      spotsFilled: 22,
+      image: "https://images.unsplash.com/photo-1556909114-f6e7ad7d3136?w=600&h=400&fit=crop",
+      status: "upcoming",
+      requirements: ["Bring own apron", "Comfortable shoes"],
+    },
+    {
+      id: "sample-2",
+      organizationId: "sample-org-2",
+      organizationName: "SPCA Singapore",
+      title: "Animal Shelter Cleaning Day",
+      description: "Help clean and maintain our animal shelter. Interact with rescued animals and make their day brighter!",
+      location: "50 Sungei Tengah Road, Singapore 699012",
+      date: "2025-01-18",
+      startTime: "09:00",
+      endTime: "13:00",
+      spotsTotal: 20,
+      spotsFilled: 15,
+      image: "https://images.unsplash.com/photo-1601758124096-1fd661873b95?w=600&h=400&fit=crop",
+      status: "upcoming",
+      requirements: ["Wear old clothes", "Must love animals"],
+    },
+    {
+      id: "sample-3",
+      organizationId: "sample-org-3",
+      organizationName: "Salvation Army Singapore",
+      title: "Donation Sorting Marathon",
+      description: "Help sort, clean, and organize donated items at our distribution center.",
+      location: "20 Bishan Street 22, Singapore 579768",
+      date: "2025-01-25",
+      startTime: "10:00",
+      endTime: "16:00",
+      spotsTotal: 50,
+      spotsFilled: 50,
+      image: "https://images.unsplash.com/photo-1532629345422-7515f3d16bb6?w=600&h=400&fit=crop",
+      status: "full",
+      requirements: ["Comfortable lifting boxes", "Lunch will be provided"],
+    },
+  ];
+
+  // Map database events to component interface, fallback to sample events if empty
+  const dbMappedEvents: VolunteerEvent[] = dbEvents.map(e => ({
     id: e.id,
     organizationId: e.organization_id,
     organizationName: e.organizations?.name || 'Unknown Organization',
@@ -63,13 +115,15 @@ const VolunteerEvents = () => {
     location: e.location,
     date: e.event_date,
     startTime: e.event_time,
-    endTime: e.event_time, // DB doesn't have end time
+    endTime: e.event_time,
     spotsTotal: e.max_volunteers,
     spotsFilled: e.current_volunteers,
     image: e.image_url || "https://images.unsplash.com/photo-1559027615-cd4628902d4a?w=600&h=400&fit=crop",
     status: (e.current_volunteers >= e.max_volunteers ? 'full' : 'upcoming') as 'upcoming' | 'full',
     requirements: [],
   }));
+
+  const events = dbMappedEvents.length > 0 ? dbMappedEvents : sampleEvents;
 
   const [registrations, setRegistrations] = useState<VolunteerRegistration[]>([]);
   const [selectedEvent, setSelectedEvent] = useState<VolunteerEvent | null>(null);
@@ -130,6 +184,16 @@ const VolunteerEvents = () => {
   const handleSignupSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
+    // Check if this is a sample event (can't register for sample events)
+    if (selectedEvent?.id.startsWith('sample-')) {
+      toast({
+        title: "Sample Event",
+        description: "This is a sample event for demonstration. Register as an organization to create real volunteer events!",
+      });
+      setIsSignupDialogOpen(false);
+      return;
+    }
+
     if (!user) {
       toast({
         title: "Login Required",
