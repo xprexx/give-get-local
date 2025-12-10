@@ -176,7 +176,7 @@ interface AuthContextType {
   approveItemRequest: (requestId: string) => Promise<void>;
   rejectItemRequest: (requestId: string, note: string) => Promise<void>;
   // Donation listing functions
-  createDonationListing: (listing: Partial<DonationListing> & { title: string; description: string; category: string; condition: string }) => Promise<void>;
+  createDonationListing: (listing: Partial<DonationListing> & { title: string; description: string; category: string; condition: string }) => Promise<{ success: boolean; error?: string }>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -651,20 +651,37 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   };
 
   // Donation listing functions
-  const createDonationListing = async (listing: Partial<DonationListing> & { title: string; description: string; category: string; condition: string }) => {
-    if (!authUser) return;
+  const createDonationListing = async (listing: Partial<DonationListing> & { title: string; description: string; category: string; condition: string }): Promise<{ success: boolean; error?: string }> => {
+    if (!authUser) return { success: false, error: 'Not authenticated' };
+    
+    // Convert condition format from hyphen to underscore for DB enum
+    const conditionMap: Record<string, 'new' | 'like_new' | 'good' | 'fair'> = {
+      'new': 'new',
+      'like-new': 'like_new',
+      'like_new': 'like_new',
+      'good': 'good',
+      'fair': 'fair',
+    };
+    
     const insertData = {
       title: listing.title,
       description: listing.description,
       category: listing.category,
       subcategory: listing.subcategory || null,
-      condition: listing.condition as 'new' | 'like_new' | 'good' | 'fair',
+      condition: conditionMap[listing.condition] || 'good',
       images: listing.images || [],
       pickup_location: listing.pickup_location || listing.pickupLocation || '',
       user_id: authUser.id,
     };
-    await supabase.from('donation_listings').insert(insertData);
+    
+    const { error } = await supabase.from('donation_listings').insert(insertData);
+    if (error) {
+      console.error('Error creating donation listing:', error);
+      return { success: false, error: error.message };
+    }
+    
     await fetchDonationListings();
+    return { success: true };
   };
 
   return (

@@ -152,18 +152,18 @@ const Browse = () => {
   const userListings: DonationItem[] = donationListings
     .filter(listing => listing.status === 'available')
     .map(listing => {
-      const donor = users.find(u => u.id === listing.userId);
+      const donor = users.find(u => u.id === (listing.user_id || listing.userId));
       return {
         id: listing.id,
         title: listing.title,
         description: listing.description,
-        image: listing.images[0] || "https://images.unsplash.com/photo-1560472354-b33ff0c44a43?w=600&h=450&fit=crop",
+        image: listing.images?.[0] || "https://images.unsplash.com/photo-1560472354-b33ff0c44a43?w=600&h=450&fit=crop",
         category: listing.category,
         subcategory: listing.subcategory,
         durability: getConditionLabel(listing.condition),
-        location: listing.pickupLocation,
+        location: listing.pickup_location || listing.pickupLocation || '',
         distance: "Nearby",
-        postedAt: getTimeAgo(listing.createdAt),
+        postedAt: getTimeAgo(listing.created_at || listing.createdAt || ''),
         views: Math.floor(Math.random() * 50) + 1,
       };
     });

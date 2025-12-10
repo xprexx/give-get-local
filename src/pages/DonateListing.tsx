@@ -118,7 +118,7 @@ const DonateListing = () => {
     setIsSubmitting(true);
 
     // Save the listing
-    createDonationListing({
+    const result = await createDonationListing({
       title: formData.title,
       description: formData.description,
       images,
@@ -129,6 +129,16 @@ const DonateListing = () => {
     });
 
     setIsSubmitting(false);
+
+    if (!result.success) {
+      toast({
+        title: "Error creating listing",
+        description: result.error || "Something went wrong. Please try again.",
+        variant: "destructive",
+      });
+      return;
+    }
+
     setIsSubmitted(true);
 
     toast({
