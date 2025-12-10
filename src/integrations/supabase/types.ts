@@ -248,6 +248,10 @@ export type Database = {
           created_at: string
           description: string
           id: string
+          is_custom_category: boolean | null
+          location: string | null
+          moderation_note: string | null
+          moderation_status: string | null
           status: string
           subcategory: string | null
           title: string
@@ -260,6 +264,10 @@ export type Database = {
           created_at?: string
           description: string
           id?: string
+          is_custom_category?: boolean | null
+          location?: string | null
+          moderation_note?: string | null
+          moderation_status?: string | null
           status?: string
           subcategory?: string | null
           title: string
@@ -272,6 +280,10 @@ export type Database = {
           created_at?: string
           description?: string
           id?: string
+          is_custom_category?: boolean | null
+          location?: string | null
+          moderation_note?: string | null
+          moderation_status?: string | null
           status?: string
           subcategory?: string | null
           title?: string
@@ -316,11 +328,13 @@ export type Database = {
       }
       organizations: {
         Row: {
+          accepted_categories: string[] | null
           category_preferences: string[] | null
           created_at: string
           description: string | null
           id: string
           name: string
+          rejected_categories: string[] | null
           status: string
           updated_at: string
           user_id: string
@@ -328,11 +342,13 @@ export type Database = {
           verification_document_name: string | null
         }
         Insert: {
+          accepted_categories?: string[] | null
           category_preferences?: string[] | null
           created_at?: string
           description?: string | null
           id?: string
           name: string
+          rejected_categories?: string[] | null
           status?: string
           updated_at?: string
           user_id: string
@@ -340,11 +356,13 @@ export type Database = {
           verification_document_name?: string | null
         }
         Update: {
+          accepted_categories?: string[] | null
           category_preferences?: string[] | null
           created_at?: string
           description?: string | null
           id?: string
           name?: string
+          rejected_categories?: string[] | null
           status?: string
           updated_at?: string
           user_id?: string

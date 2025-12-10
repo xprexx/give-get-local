@@ -30,6 +30,10 @@ export interface Organization {
   description: string;
   category_preferences: string[];
   categoryPreferences?: string[];
+  accepted_categories: string[];
+  acceptedCategories?: string[];
+  rejected_categories: string[];
+  rejectedCategories?: string[];
   subcategoryPreferences?: SubcategoryPreference[];
   status: 'pending' | 'approved' | 'rejected';
   verification_document?: string;
@@ -75,8 +79,15 @@ export interface ItemRequest {
   description: string;
   category: string;
   subcategory?: string;
-  urgency: 'low' | 'normal' | 'high';
+  location?: string;
+  urgency: 'low' | 'normal' | 'medium' | 'high';
   status: 'pending' | 'approved' | 'rejected' | 'fulfilled';
+  is_custom_category?: boolean;
+  isCustomCategory?: boolean;
+  moderation_status?: 'pending' | 'approved' | 'rejected';
+  moderationStatus?: 'pending' | 'approved' | 'rejected';
+  moderation_note?: string;
+  moderationNote?: string;
   created_at: string;
   createdAt?: string;
   updated_at: string;
@@ -220,6 +231,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         ...o,
         userId: o.user_id,
         categoryPreferences: o.category_preferences,
+        acceptedCategories: (o as any).accepted_categories || [],
+        rejectedCategories: (o as any).rejected_categories || [],
         createdAt: o.created_at,
         verificationDocument: o.verification_document,
         verificationDocumentName: o.verification_document_name,
@@ -277,6 +290,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       setItemRequests(data.map(r => ({
         ...r,
         userId: r.user_id,
+        isCustomCategory: (r as any).is_custom_category || false,
+        moderationStatus: (r as any).moderation_status || 'pending',
+        moderationNote: (r as any).moderation_note,
         createdAt: r.created_at,
       })) as unknown as ItemRequest[]);
     }
@@ -509,7 +525,14 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   // Organization functions
   const updateOrganization = async (updates: Partial<Organization>) => {
     if (!organization) return;
-    await supabase.from('organizations').update(updates).eq('id', organization.id);
+    const dbUpdates: Record<string, unknown> = {};
+    if (updates.name) dbUpdates.name = updates.name;
+    if (updates.description !== undefined) dbUpdates.description = updates.description;
+    if (updates.acceptedCategories) dbUpdates.accepted_categories = updates.acceptedCategories;
+    if (updates.rejectedCategories) dbUpdates.rejected_categories = updates.rejectedCategories;
+    if (updates.category_preferences) dbUpdates.category_preferences = updates.category_preferences;
+    if (updates.subcategoryPreferences) dbUpdates.subcategory_preferences = updates.subcategoryPreferences;
+    await (supabase.from('organizations').update(dbUpdates as any).eq('id', organization.id) as any);
     await fetchOrganizations();
     if (authUser) await fetchUserData(authUser.id);
   };
@@ -601,8 +624,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   // Item request functions
   const submitItemRequest = async (request: Partial<ItemRequest> & { title: string; description: string; category: string; location: string; urgency: 'low' | 'medium' | 'high' }) => {
     if (!authUser) return;
+    // Check if category is approved
     const isApproved = categories.some(c => c.name === request.category);
-    await supabase.from('item_requests').insert({
+    await (supabase.from('item_requests').insert({
       title: request.title,
       description: request.description,
       category: request.category,
@@ -610,17 +634,21 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       urgency: request.urgency,
       user_id: authUser.id,
       is_custom_category: !isApproved,
-      status: 'active',
+      status: 'pending',
       moderation_status: isApproved ? 'approved' : 'pending',
-    });
+    } as any) as any);
     await fetchItemRequests();
   };
 
   const updateItemRequest = async (requestId: string, updates: Partial<ItemRequest>) => {
-    const dbUpdates: Record<string, unknown> = { ...updates };
+    const dbUpdates: Record<string, unknown> = {};
+    if (updates.title) dbUpdates.title = updates.title;
+    if (updates.description) dbUpdates.description = updates.description;
+    if (updates.category) dbUpdates.category = updates.category;
+    if (updates.status) dbUpdates.status = updates.status;
     if (updates.moderationStatus) dbUpdates.moderation_status = updates.moderationStatus;
-    if (updates.moderationNote) dbUpdates.moderation_note = updates.moderationNote;
-    await supabase.from('item_requests').update(dbUpdates).eq('id', requestId);
+    if (updates.moderationNote !== undefined) dbUpdates.moderation_note = updates.moderationNote;
+    await (supabase.from('item_requests').update(dbUpdates as any).eq('id', requestId) as any);
     await fetchItemRequests();
   };
 
@@ -630,12 +658,12 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   };
 
   const approveItemRequest = async (requestId: string) => {
-    await supabase.from('item_requests').update({ moderation_status: 'approved', moderation_note: null }).eq('id', requestId);
+    await (supabase.from('item_requests').update({ moderation_status: 'approved', moderation_note: null } as any).eq('id', requestId) as any);
     await fetchItemRequests();
   };
 
   const rejectItemRequest = async (requestId: string, note: string) => {
-    await supabase.from('item_requests').update({ moderation_status: 'rejected', moderation_note: note }).eq('id', requestId);
+    await (supabase.from('item_requests').update({ moderation_status: 'rejected', moderation_note: note } as any).eq('id', requestId) as any);
     await fetchItemRequests();
   };
 
