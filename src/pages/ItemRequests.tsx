@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -6,17 +6,51 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { MapPin, Calendar, Heart, Search, Filter } from "lucide-react";
+import { MapPin, Calendar, Heart, Search, Filter, Trash2 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useItemRequests } from "@/hooks/useItemRequests";
-import { useState } from "react";
 import { format } from "date-fns";
+import { useToast } from "@/hooks/use-toast";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 
 const ItemRequests = () => {
-  const { categories, users } = useAuth();
-  const { requests: itemRequests, refresh } = useItemRequests();
+  const { categories, users, user, userRole } = useAuth();
+  const { requests: itemRequests, refresh, deleteRequest } = useItemRequests();
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCategory, setSelectedCategory] = useState<string>("all");
+  const { toast } = useToast();
+
+  const isAdmin = userRole === 'admin';
+
+  const handleDelete = async (id: string) => {
+    const { error } = await deleteRequest(id);
+    if (error) {
+      toast({
+        title: "Error",
+        description: "Failed to delete request",
+        variant: "destructive",
+      });
+    } else {
+      toast({
+        title: "Deleted",
+        description: "Item request has been deleted",
+      });
+    }
+  };
+
+  const canDelete = (requestUserId: string) => {
+    return isAdmin || user?.id === requestUserId;
+  };
 
   // Refresh on mount
   useEffect(() => {
@@ -149,9 +183,34 @@ const ItemRequests = () => {
                       </p>
                     </div>
 
-                    <Button className="w-full" variant="default">
-                      Offer to Donate
-                    </Button>
+                    <div className="flex gap-2">
+                      <Button className="flex-1" variant="default">
+                        Offer to Donate
+                      </Button>
+                      {canDelete(request.user_id) && (
+                        <AlertDialog>
+                          <AlertDialogTrigger asChild>
+                            <Button variant="destructive" size="icon">
+                              <Trash2 className="w-4 h-4" />
+                            </Button>
+                          </AlertDialogTrigger>
+                          <AlertDialogContent>
+                            <AlertDialogHeader>
+                              <AlertDialogTitle>Delete Request</AlertDialogTitle>
+                              <AlertDialogDescription>
+                                Are you sure you want to delete this item request? This action cannot be undone.
+                              </AlertDialogDescription>
+                            </AlertDialogHeader>
+                            <AlertDialogFooter>
+                              <AlertDialogCancel>Cancel</AlertDialogCancel>
+                              <AlertDialogAction onClick={() => handleDelete(request.id)}>
+                                Delete
+                              </AlertDialogAction>
+                            </AlertDialogFooter>
+                          </AlertDialogContent>
+                        </AlertDialog>
+                      )}
+                    </div>
                   </CardContent>
                 </Card>
               ))}
