@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Search, SlidersHorizontal, MapPin, PlusCircle } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useDonationListings } from "@/hooks/useDonationListings";
+import { useToast } from "@/hooks/use-toast";
 
 const sampleItems: DonationItem[] = [
   {
@@ -145,15 +146,26 @@ const getTimeAgo = (dateString: string) => {
 };
 
 const Browse = () => {
-  const { user } = useAuth();
-  const { listings: donationListings, refresh } = useDonationListings();
+  const { user, userRole } = useAuth();
+  const { listings: donationListings, refresh, deleteListing } = useDonationListings();
+  const { toast } = useToast();
   const [selectedCategory, setSelectedCategory] = useState("All");
   const [searchQuery, setSearchQuery] = useState("");
+  
+  const isAdmin = userRole === 'admin';
 
   // Refresh listings when component mounts
   useEffect(() => {
     refresh();
   }, []);
+
+  const handleDeleteListing = async (id: string) => {
+    const { error } = await deleteListing(id);
+    if (error) {
+      throw error;
+    }
+    refresh();
+  };
 
   // Convert user donation listings to DonationItem format
   const userListings: DonationItem[] = donationListings
@@ -263,7 +275,11 @@ const Browse = () => {
                 className="animate-fade-up"
                 style={{ animationDelay: `${index * 0.05}s` }}
               >
-                <DonationCard item={item} />
+                <DonationCard 
+                  item={item} 
+                  isAdmin={isAdmin}
+                  onDelete={handleDeleteListing}
+                />
               </div>
             ))}
           </div>
