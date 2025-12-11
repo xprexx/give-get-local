@@ -1,7 +1,14 @@
 import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Heart, Menu, X, LogOut, User, Building2, Shield, HandHeart, LayoutDashboard, PlusCircle, Package } from "lucide-react";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { Heart, Menu, X, LogOut, User, Building2, Shield, HandHeart, LayoutDashboard, PlusCircle, Package, ChevronDown } from "lucide-react";
 import { useState } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import NotificationDropdown from "@/components/NotificationDropdown";
@@ -34,80 +41,96 @@ const Navbar = () => {
           </Link>
 
           {/* Desktop Navigation */}
-          <div className="hidden md:flex items-center gap-6">
-            <Link to="/browse" className="text-muted-foreground hover:text-foreground transition-colors font-medium">
-              Browse Items
+          <div className="hidden lg:flex items-center gap-1">
+            <Link to="/browse" className="px-3 py-2 text-sm text-muted-foreground hover:text-foreground transition-colors font-medium rounded-md hover:bg-muted/50">
+              Browse
             </Link>
-            {user?.role === 'beneficiary' && user?.status === 'active' ? (
-              <Link to="/beneficiary/requests" className="text-muted-foreground hover:text-foreground transition-colors font-medium">
-                Item Requests
-              </Link>
-            ) : (
-              <Link to="/item-requests" className="text-muted-foreground hover:text-foreground transition-colors font-medium">
-                Item Requests
-              </Link>
-            )}
-            {user && (
-              <Link to="/donor/my-listings" className="text-muted-foreground hover:text-foreground transition-colors font-medium">
-                My Listings
-              </Link>
-            )}
-            {user && (
-              <Link to="/donor/pickup-requests" className="text-muted-foreground hover:text-foreground transition-colors font-medium">
-                Pickup Requests
-              </Link>
-            )}
-            <Link to="/organizations" className="text-muted-foreground hover:text-foreground transition-colors font-medium">
+            <Link to="/item-requests" className="px-3 py-2 text-sm text-muted-foreground hover:text-foreground transition-colors font-medium rounded-md hover:bg-muted/50">
+              Requests
+            </Link>
+            <Link to="/organizations" className="px-3 py-2 text-sm text-muted-foreground hover:text-foreground transition-colors font-medium rounded-md hover:bg-muted/50">
               Organizations
             </Link>
-            <Link to="/crowdfunding" className="text-muted-foreground hover:text-foreground transition-colors font-medium">
+            <Link to="/crowdfunding" className="px-3 py-2 text-sm text-muted-foreground hover:text-foreground transition-colors font-medium rounded-md hover:bg-muted/50">
               Crowdfunding
             </Link>
-            <Link to="/volunteer" className="text-muted-foreground hover:text-foreground transition-colors font-medium">
+            <Link to="/volunteer" className="px-3 py-2 text-sm text-muted-foreground hover:text-foreground transition-colors font-medium rounded-md hover:bg-muted/50">
               Volunteer
             </Link>
           </div>
 
-          <div className="hidden md:flex items-center gap-3">
+          <div className="hidden lg:flex items-center gap-2">
             {user ? (
               <>
                 <Link to="/donate">
-                  <Button variant="hero" size="sm" className="gap-2">
+                  <Button variant="hero" size="sm" className="gap-1.5">
                     <PlusCircle className="h-4 w-4" />
-                    Donate Item
+                    Donate
                   </Button>
                 </Link>
                 <NotificationDropdown />
-                <Link to="/account">
-                  <Button variant="ghost" className="gap-2">
-                    {user.role === 'admin' && <Shield className="h-4 w-4" />}
-                    {user.role === 'organization' && <Building2 className="h-4 w-4" />}
-                    {user.role === 'beneficiary' && <HandHeart className="h-4 w-4" />}
-                    {user.role === 'user' && <User className="h-4 w-4" />}
-                    {user.name}
-                    {user.role === 'beneficiary' && (
-                      <Badge variant="success" className="ml-1 text-xs">Verified</Badge>
-                    )}
-                  </Button>
-                </Link>
-                {(user.role === 'admin' || user.role === 'organization') && (
-                  <Link to={getDashboardLink()}>
-                    <Button variant="ghost" size="icon">
-                      <LayoutDashboard className="h-4 w-4" />
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="ghost" size="sm" className="gap-1.5">
+                      {user.role === 'admin' && <Shield className="h-4 w-4" />}
+                      {user.role === 'organization' && <Building2 className="h-4 w-4" />}
+                      {user.role === 'beneficiary' && <HandHeart className="h-4 w-4" />}
+                      {user.role === 'user' && <User className="h-4 w-4" />}
+                      <span className="max-w-[100px] truncate">{user.name}</span>
+                      <ChevronDown className="h-3 w-3" />
                     </Button>
-                  </Link>
-                )}
-                <Button variant="ghost" size="icon" onClick={handleLogout}>
-                  <LogOut className="h-4 w-4" />
-                </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end" className="w-48">
+                    <DropdownMenuItem asChild>
+                      <Link to="/donor/my-listings" className="w-full cursor-pointer">
+                        <Package className="h-4 w-4 mr-2" />
+                        My Listings
+                      </Link>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem asChild>
+                      <Link to="/donor/pickup-requests" className="w-full cursor-pointer">
+                        <Heart className="h-4 w-4 mr-2" />
+                        Pickup Requests
+                      </Link>
+                    </DropdownMenuItem>
+                    {user.role === 'beneficiary' && user.status === 'active' && (
+                      <DropdownMenuItem asChild>
+                        <Link to="/beneficiary/requests" className="w-full cursor-pointer">
+                          <HandHeart className="h-4 w-4 mr-2" />
+                          My Item Requests
+                        </Link>
+                      </DropdownMenuItem>
+                    )}
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem asChild>
+                      <Link to="/account" className="w-full cursor-pointer">
+                        <User className="h-4 w-4 mr-2" />
+                        Account
+                      </Link>
+                    </DropdownMenuItem>
+                    {(user.role === 'admin' || user.role === 'organization') && (
+                      <DropdownMenuItem asChild>
+                        <Link to={getDashboardLink()} className="w-full cursor-pointer">
+                          <LayoutDashboard className="h-4 w-4 mr-2" />
+                          Dashboard
+                        </Link>
+                      </DropdownMenuItem>
+                    )}
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem onClick={handleLogout} className="cursor-pointer text-destructive focus:text-destructive">
+                      <LogOut className="h-4 w-4 mr-2" />
+                      Logout
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
               </>
             ) : (
               <>
                 <Link to="/auth">
-                  <Button variant="ghost">Sign In</Button>
+                  <Button variant="ghost" size="sm">Sign In</Button>
                 </Link>
                 <Link to="/donate">
-                  <Button variant="hero">Donate Now</Button>
+                  <Button variant="hero" size="sm">Donate Now</Button>
                 </Link>
               </>
             )}
@@ -115,7 +138,7 @@ const Navbar = () => {
 
           {/* Mobile Menu Button */}
           <button
-            className="md:hidden p-2"
+            className="lg:hidden p-2"
             onClick={() => setIsOpen(!isOpen)}
             aria-label="Toggle menu"
           >
@@ -125,7 +148,7 @@ const Navbar = () => {
 
         {/* Mobile Navigation */}
         {isOpen && (
-          <div className="md:hidden py-4 border-t border-border animate-fade-up">
+          <div className="lg:hidden py-4 border-t border-border animate-fade-up">
             <div className="flex flex-col gap-4">
               <Link to="/browse" className="text-muted-foreground hover:text-foreground transition-colors font-medium py-2" onClick={() => setIsOpen(false)}>
                 Browse Items
