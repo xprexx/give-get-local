@@ -1,91 +1,69 @@
-import { useState } from "react";
+import { useState, useEffect, useMemo } from "react";
 import DonationCard, { DonationItem } from "@/components/DonationCard";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Search, SlidersHorizontal } from "lucide-react";
+import { useDonationListings } from "@/hooks/useDonationListings";
+import { useCategories } from "@/hooks/useCategories";
+import { Link } from "react-router-dom";
 
-const sampleItems: DonationItem[] = [
-  {
-    id: "1",
-    title: "Vintage Wooden Bookshelf",
-    description: "Beautiful teak bookshelf in great condition. Has 5 shelves and can hold many books. Minor scratches on the back.",
-    image: "https://images.unsplash.com/photo-1594620302200-9a762244a156?w=600&h=450&fit=crop",
-    category: "Furniture",
-    durability: "Used 2 years",
-    location: "Toa Payoh",
-    distance: "1.2 km",
-    postedAt: "2h ago",
-    views: 45,
-  },
-  {
-    id: "2",
-    title: "Kids' Winter Clothing Bundle",
-    description: "Collection of jackets, sweaters, and pants for kids aged 5-7. All in good condition, some barely worn.",
-    image: "https://images.unsplash.com/photo-1622290291468-a28f7a7dc6a8?w=600&h=450&fit=crop",
-    category: "Clothing",
-    durability: "Gently used",
-    location: "Tampines",
-    distance: "3.5 km",
-    postedAt: "5h ago",
-    views: 89,
-  },
-  {
-    id: "3",
-    title: "Samsung 32\" LED TV",
-    description: "Working perfectly, comes with remote and power cable. Upgrading to a bigger size so giving this away.",
-    image: "https://images.unsplash.com/photo-1593359677879-a4bb92f829d1?w=600&h=450&fit=crop",
-    category: "Electronics",
-    durability: "Used 3 years",
-    location: "Jurong East",
-    distance: "5.0 km",
-    postedAt: "1d ago",
-    views: 234,
-  },
-  {
-    id: "4",
-    title: "Beginner Guitar with Case",
-    description: "Acoustic guitar perfect for beginners. Includes carrying case and a pick. Some light wear but plays great.",
-    image: "https://images.unsplash.com/photo-1510915361894-db8b60106cb1?w=600&h=450&fit=crop",
-    category: "Music",
-    durability: "Used 1 year",
-    location: "Bishan",
-    distance: "2.1 km",
-    postedAt: "3h ago",
-    views: 67,
-  },
-  {
-    id: "5",
-    title: "Box of Children's Books",
-    description: "Around 30 books suitable for ages 4-10. Mix of picture books and early readers. Great for homeschooling or classroom.",
-    image: "https://images.unsplash.com/photo-1512820790803-83ca734da794?w=600&h=450&fit=crop",
-    category: "Books",
-    durability: "Good condition",
-    location: "Ang Mo Kio",
-    distance: "2.8 km",
-    postedAt: "6h ago",
-    views: 112,
-  },
-  {
-    id: "6",
-    title: "Office Desk with Drawers",
-    description: "Sturdy wooden desk with 3 drawers. Perfect for home office. Some minor wear on the surface.",
-    image: "https://images.unsplash.com/photo-1518455027359-f3f8164ba6bd?w=600&h=450&fit=crop",
-    category: "Furniture",
-    durability: "Used 4 years",
-    location: "Raffles Place",
-    distance: "4.2 km",
-    postedAt: "12h ago",
-    views: 78,
-  },
-];
+const getConditionLabel = (condition: string): string => {
+  const labels: Record<string, string> = {
+    new: "Brand New",
+    like_new: "Like New",
+    good: "Good Condition",
+    fair: "Fair Condition",
+  };
+  return labels[condition] || condition;
+};
 
-const categories = ["All", "Furniture", "Clothing", "Electronics", "Books", "Music", "Toys", "Kitchen"];
+const getTimeAgo = (dateString: string): string => {
+  const date = new Date(dateString);
+  const now = new Date();
+  const diffInMs = now.getTime() - date.getTime();
+  const diffInHours = Math.floor(diffInMs / (1000 * 60 * 60));
+  
+  if (diffInHours < 1) return "Just now";
+  if (diffInHours < 24) return `${diffInHours}h ago`;
+  const diffInDays = Math.floor(diffInHours / 24);
+  if (diffInDays === 1) return "1d ago";
+  return `${diffInDays}d ago`;
+};
 
 const FeaturedItems = () => {
   const [selectedCategory, setSelectedCategory] = useState("All");
   const [searchQuery, setSearchQuery] = useState("");
+  const { listings, loading, refresh } = useDonationListings();
+  const { categories: dbCategories } = useCategories();
 
-  const filteredItems = sampleItems.filter((item) => {
+  useEffect(() => {
+    refresh();
+  }, []);
+
+  const categories = useMemo(() => {
+    const cats = ["All", ...dbCategories.map(c => c.name)];
+    return cats;
+  }, [dbCategories]);
+
+  const items: DonationItem[] = useMemo(() => {
+    return listings
+      .filter(listing => listing.status === 'available')
+      .map(listing => ({
+        id: listing.id,
+        title: listing.title,
+        description: listing.description,
+        image: listing.images?.[0] || "https://images.unsplash.com/photo-1586023492125-27b2c045efd7?w=600&h=450&fit=crop",
+        category: listing.category,
+        durability: getConditionLabel(listing.condition),
+        location: listing.pickup_location,
+        distance: "Nearby",
+        postedAt: getTimeAgo(listing.created_at),
+        views: 0,
+        userId: listing.user_id,
+      }));
+  }, [listings]);
+
+  const filteredItems = items.filter((item) => {
     const matchesCategory = selectedCategory === "All" || item.category === selectedCategory;
     const matchesSearch = item.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
                          item.description.toLowerCase().includes(searchQuery.toLowerCase());
@@ -158,9 +136,11 @@ const FeaturedItems = () => {
         )}
 
         <div className="text-center mt-12">
-          <Button variant="outline" size="lg">
-            View All Items
-          </Button>
+          <Link to="/browse">
+            <Button variant="outline" size="lg">
+              View All Items
+            </Button>
+          </Link>
         </div>
       </div>
     </section>
