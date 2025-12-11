@@ -46,6 +46,7 @@ const DonationCard = ({ item, isAdmin, onDelete }: DonationCardProps) => {
   const { toast } = useToast();
   const { user } = useAuth();
   const { createRequest } = usePickupRequests();
+  const [isDetailDialogOpen, setIsDetailDialogOpen] = useState(false);
   const [isRequestDialogOpen, setIsRequestDialogOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [requestSuccess, setRequestSuccess] = useState(false);
@@ -86,7 +87,8 @@ const DonationCard = ({ item, isAdmin, onDelete }: DonationCardProps) => {
     setIsDeleteDialogOpen(false);
   };
 
-  const handleRequestPickup = () => {
+  const handleRequestPickup = (e?: React.MouseEvent) => {
+    e?.stopPropagation();
     if (!user) {
       toast({
         title: "Login Required",
@@ -105,6 +107,7 @@ const DonationCard = ({ item, isAdmin, onDelete }: DonationCardProps) => {
       return;
     }
 
+    setIsDetailDialogOpen(false);
     setRequestSuccess(false);
     setFormData({
       name: user?.name || "",
@@ -191,7 +194,10 @@ const DonationCard = ({ item, isAdmin, onDelete }: DonationCardProps) => {
 
   return (
     <>
-      <Card className="group overflow-hidden cursor-pointer hover:-translate-y-1">
+      <Card 
+        className="group overflow-hidden cursor-pointer hover:-translate-y-1"
+        onClick={() => setIsDetailDialogOpen(true)}
+      >
         <div className="relative aspect-[4/3] overflow-hidden">
           <img
             src={item.image}
@@ -242,7 +248,7 @@ const DonationCard = ({ item, isAdmin, onDelete }: DonationCardProps) => {
         
         <CardFooter className="pt-0 flex gap-2">
           {isOwnItem ? (
-            <Button variant="outline" className="flex-1" disabled>
+            <Button variant="outline" className="flex-1" disabled onClick={(e) => e.stopPropagation()}>
               Your Listing
             </Button>
           ) : (
@@ -255,13 +261,109 @@ const DonationCard = ({ item, isAdmin, onDelete }: DonationCardProps) => {
               variant="ghost" 
               size="icon"
               className="text-destructive hover:text-destructive hover:bg-destructive/10"
-              onClick={() => setIsDeleteDialogOpen(true)}
+              onClick={(e) => {
+                e.stopPropagation();
+                setIsDeleteDialogOpen(true);
+              }}
             >
               <Trash2 className="w-4 h-4" />
             </Button>
           )}
         </CardFooter>
       </Card>
+
+      {/* Detail Dialog */}
+      <Dialog open={isDetailDialogOpen} onOpenChange={setIsDetailDialogOpen}>
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="text-xl">{item.title}</DialogTitle>
+            <DialogDescription>
+              Listed {item.postedAt}
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="space-y-6">
+            {/* Image */}
+            <div className="relative aspect-video rounded-lg overflow-hidden">
+              <img
+                src={item.image}
+                alt={item.title}
+                className="w-full h-full object-cover"
+              />
+            </div>
+
+            {/* Badges */}
+            <div className="flex flex-wrap gap-2">
+              <Badge variant="success" className="text-sm">{item.category}</Badge>
+              {item.subcategory && (
+                <Badge variant="secondary" className="text-sm">{item.subcategory}</Badge>
+              )}
+              <Badge variant="outline" className="text-sm">{item.durability}</Badge>
+              {isOwnItem && (
+                <Badge variant="secondary" className="text-sm">Your Listing</Badge>
+              )}
+            </div>
+
+            {/* Description */}
+            <div>
+              <h4 className="font-semibold mb-2">Description</h4>
+              <p className="text-muted-foreground whitespace-pre-wrap">{item.description}</p>
+            </div>
+
+            {/* Details Grid */}
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-1">
+                <span className="text-sm text-muted-foreground">Pickup Location</span>
+                <div className="flex items-center gap-2">
+                  <MapPin className="w-4 h-4 text-primary" />
+                  <span className="font-medium">{item.location}</span>
+                </div>
+              </div>
+              <div className="space-y-1">
+                <span className="text-sm text-muted-foreground">Distance</span>
+                <p className="font-medium">{item.distance}</p>
+              </div>
+              <div className="space-y-1">
+                <span className="text-sm text-muted-foreground">Condition</span>
+                <p className="font-medium">{item.durability}</p>
+              </div>
+              <div className="space-y-1">
+                <span className="text-sm text-muted-foreground">Views</span>
+                <div className="flex items-center gap-2">
+                  <Eye className="w-4 h-4 text-muted-foreground" />
+                  <span className="font-medium">{item.views}</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <DialogFooter className="flex gap-2 sm:gap-2">
+            {canDelete && onDelete && (
+              <Button 
+                variant="outline"
+                className="text-destructive border-destructive hover:bg-destructive/10"
+                onClick={() => {
+                  setIsDetailDialogOpen(false);
+                  setIsDeleteDialogOpen(true);
+                }}
+              >
+                <Trash2 className="w-4 h-4 mr-2" />
+                Delete
+              </Button>
+            )}
+            <div className="flex-1" />
+            {isOwnItem ? (
+              <Button variant="outline" disabled>
+                Your Listing
+              </Button>
+            ) : (
+              <Button onClick={handleRequestPickup}>
+                Request Pickup
+              </Button>
+            )}
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       {/* Request Pickup Dialog */}
       <Dialog open={isRequestDialogOpen} onOpenChange={closeDialog}>
