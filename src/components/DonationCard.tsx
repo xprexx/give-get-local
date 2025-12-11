@@ -6,7 +6,17 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from "@/components/ui/dialog";
-import { MapPin, Clock, Eye, CheckCircle, MessageSquare, Calendar } from "lucide-react";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import { MapPin, Clock, Eye, CheckCircle, MessageSquare, Calendar, Trash2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
 import { usePickupRequests } from "@/hooks/usePickupRequests";
@@ -28,15 +38,19 @@ export interface DonationItem {
 
 interface DonationCardProps {
   item: DonationItem;
+  isAdmin?: boolean;
+  onDelete?: (id: string) => Promise<void>;
 }
 
-const DonationCard = ({ item }: DonationCardProps) => {
+const DonationCard = ({ item, isAdmin, onDelete }: DonationCardProps) => {
   const { toast } = useToast();
   const { user } = useAuth();
   const { createRequest } = usePickupRequests();
   const [isRequestDialogOpen, setIsRequestDialogOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [requestSuccess, setRequestSuccess] = useState(false);
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
   const [formData, setFormData] = useState({
     name: "",
     email: "",
@@ -50,6 +64,27 @@ const DonationCard = ({ item }: DonationCardProps) => {
 
   // Check if user owns this item (prevent self-requesting)
   const isOwnItem = user && item.donorId === user.id;
+  const canDelete = isOwnItem || isAdmin;
+
+  const handleDelete = async () => {
+    if (!onDelete) return;
+    setIsDeleting(true);
+    try {
+      await onDelete(item.id);
+      toast({
+        title: "Listing deleted",
+        description: "The listing has been removed.",
+      });
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to delete listing.",
+        variant: "destructive",
+      });
+    }
+    setIsDeleting(false);
+    setIsDeleteDialogOpen(false);
+  };
 
   const handleRequestPickup = () => {
     if (!user) {
@@ -205,14 +240,24 @@ const DonationCard = ({ item }: DonationCardProps) => {
           </div>
         </CardContent>
         
-        <CardFooter className="pt-0">
+        <CardFooter className="pt-0 flex gap-2">
           {isOwnItem ? (
-            <Button variant="outline" className="w-full" disabled>
+            <Button variant="outline" className="flex-1" disabled>
               Your Listing
             </Button>
           ) : (
-            <Button variant="default" className="w-full" onClick={handleRequestPickup}>
+            <Button variant="default" className="flex-1" onClick={handleRequestPickup}>
               Request Pickup
+            </Button>
+          )}
+          {canDelete && onDelete && (
+            <Button 
+              variant="ghost" 
+              size="icon"
+              className="text-destructive hover:text-destructive hover:bg-destructive/10"
+              onClick={() => setIsDeleteDialogOpen(true)}
+            >
+              <Trash2 className="w-4 h-4" />
             </Button>
           )}
         </CardFooter>
@@ -392,6 +437,28 @@ const DonationCard = ({ item }: DonationCardProps) => {
           )}
         </DialogContent>
       </Dialog>
+
+      {/* Delete Confirmation Dialog */}
+      <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete Listing</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to delete "{item.title}"? This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction 
+              onClick={handleDelete} 
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              disabled={isDeleting}
+            >
+              {isDeleting ? "Deleting..." : "Delete"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </>
   );
 };
